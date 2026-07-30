@@ -1,56 +1,61 @@
-# Welcome to your Expo app 👋
+# GoDash
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+GoDash is a lightweight DoorDash-style group ordering demo built with Expo + React Native.
 
-## Get started
+## Features
+
+- **Group order creation**
+  - Start a group with a host email
+- **Invite flow (max 3 total participants)**
+  - Host + up to 2 invited participants
+- **Per-participant carts**
+  - Each participant has their own cart
+  - Switch who you’re ordering as
+- **Menu + product images**
+  - Menu items render with thumbnail images
+- **Host-only checkout**
+  - Summary breakdown by participant
+  - Checkout action restricted to host
+- **Light/Dark theme support**
+  - Themed UI components and brand color `#c92138`
+
+## Screenshots
+
+| Start order                                     | Invites                                 |
+| ----------------------------------------------- | --------------------------------------- |
+| ![Start order](./assets/github/start-order.png) | ![Invites](./assets/github/invites.png) |
+
+| Menu + cart                       | Order summary                                       |
+| --------------------------------- | --------------------------------------------------- |
+| ![Cart](./assets/github/cart.png) | ![Order summary](./assets/github/order-summary.png) |
+
+## Getting started
 
 1. Install dependencies
 
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+2. Start the backend (required for invites/carts/checkout persistence)
 
-### Other setup steps
+```bash
+npm run backend
+```
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+3. Start the Expo app
 
-## Learn more
+```bash
+npx expo start
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+## Backend URL
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+By default the app uses `http://localhost:3001`.
 
-## Join the community
+- **iOS Simulator**: works as-is
+- **Real device**: set `EXPO_PUBLIC_BACKEND_URL` to your machine’s LAN IP, e.g.
 
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```bash
+EXPO_PUBLIC_BACKEND_URL=http://192.168.1.23:3001 npx expo start --clear
+```

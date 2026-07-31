@@ -43,7 +43,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "backend": "node backend/server.js"
+    "backend": "node backend/server.js",
+    "screenshots:ios": "node scripts/run-maestro-screenshots.mjs"
   },
   "private": true
 }

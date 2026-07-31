@@ -63,6 +63,7 @@ export default function HomeScreen() {
             <ThemedView style={cardStyle}>
               <ThemedText type="smallBold">Start a group</ThemedText>
               <TextInput
+                testID="host-email-input"
                 value={hostEmailDraft}
                 onChangeText={setHostEmailDraft}
                 placeholder="host@email.com"
@@ -79,7 +80,8 @@ export default function HomeScreen() {
                 ]}
               />
               <Pressable
-                onPress={() => {
+                testID="create-group-button"
+                onPress={async () => {
                   const email = hostEmailDraft.trim().toLowerCase();
                   if (!/^\S+@\S+\.\S+$/.test(email)) {
                     Alert.alert(
@@ -88,7 +90,10 @@ export default function HomeScreen() {
                     );
                     return;
                   }
-                  actions.startGroup(email);
+                  const result = await actions.startGroup(email);
+                  if (!result.ok) {
+                    Alert.alert("Create group failed", result.reason);
+                  }
                 }}
                 style={({ pressed }) => [
                   styles.primaryButton,
@@ -115,6 +120,7 @@ export default function HomeScreen() {
                 <View style={styles.rowBetween}>
                   <ThemedText type="smallBold">Invite link</ThemedText>
                   <Pressable
+                    testID="share-invite-link-button"
                     onPress={async () => {
                       const url = Linking.createURL("/join", {
                         queryParams: { groupId: state.groupId },
@@ -135,6 +141,7 @@ export default function HomeScreen() {
                 </ThemedText>
                 <View style={styles.row}>
                   <TextInput
+                    testID="invite-email-input"
                     value={inviteDraft}
                     onChangeText={setInviteDraft}
                     placeholder="friend@email.com"
@@ -152,6 +159,7 @@ export default function HomeScreen() {
                     ]}
                   />
                   <Pressable
+                    testID="invite-button"
                     disabled={state.invitedEmails.length >= 2}
                     onPress={async () => {
                       const result = await actions.addInvite(inviteDraft);

@@ -39,11 +39,13 @@ export type GroupOrderState = {
   cartsByEmail: Record<string, Record<string, number>>;
 };
 
-type GroupOrderContextValue = {
+export type GroupOrderContextValue = {
   state: GroupOrderState;
   products: Product[];
   actions: {
-    startGroup: (hostEmail: string) => Promise<void>;
+    startGroup: (
+      hostEmail: string,
+    ) => Promise<{ ok: true } | { ok: false; reason: string }>;
     loadGroup: (
       groupId: string,
       email: string,
@@ -166,10 +168,20 @@ export function GroupOrderProvider({
   }, []);
 
   const startGroup = useCallback(
-    async (hostEmailRaw: string) => {
+    async (
+      hostEmailRaw: string,
+    ): Promise<{ ok: true } | { ok: false; reason: string }> => {
       const hostEmail = normalizeEmail(hostEmailRaw);
-      const res = await backendCreateGroup(hostEmail);
-      applyBackendGroup(res.group);
+      try {
+        const res = await backendCreateGroup(hostEmail);
+        applyBackendGroup(res.group);
+        return { ok: true };
+      } catch (e) {
+        return {
+          ok: false,
+          reason: e instanceof Error ? e.message : "Failed to create group.",
+        };
+      }
     },
     [applyBackendGroup],
   );

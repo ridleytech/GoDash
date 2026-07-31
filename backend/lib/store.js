@@ -1,7 +1,15 @@
-const { MongoClient } = require("mongodb");
-
 const MONGODB_URI = process.env.MONGODB_URI || "";
 const MONGODB_DB = process.env.MONGODB_DB || "godash";
+
+/** @type {import('mongodb').MongoClientConstructor | null} */
+let MongoClient = null;
+if (MONGODB_URI) {
+  try {
+    MongoClient = require("mongodb").MongoClient;
+  } catch (_e) {
+    MongoClient = null;
+  }
+}
 
 /** @type {MongoClient | null} */
 let client = null;
@@ -13,6 +21,7 @@ const memoryGroups = new Map();
 
 async function getGroupsCollection() {
   if (!MONGODB_URI) return null;
+  if (!MongoClient) return null;
 
   if (!client) {
     client = new MongoClient(MONGODB_URI);

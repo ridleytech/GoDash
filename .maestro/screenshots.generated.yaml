@@ -1,0 +1,46 @@
+appId: host.exp.Exponent
+---
+- launchApp
+- waitForAnimationToEnd
+- openLink: "exp://127.0.0.1:8081"
+- waitForAnimationToEnd
+
+# Start order
+- tapOn:
+    id: "host-email-input"
+- inputText: "host@example.com"
+- tapOn:
+    id: "create-group-button"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "invite-email-input"
+    timeout: 30000
+- takeScreenshot: "assets/github/start-order"
+
+# Invites
+- scrollUntilVisible:
+    element:
+      id: "invite-email-input"
+    direction: DOWN
+    visibilityPercentage: 50
+    waitToSettleTimeoutMs: 500
+- assertVisible:
+    id: "invite-email-input"
+- tapOn:
+    id: "invite-email-input"
+- inputText: "friend1@example.com"
+- tapOn:
+    id: "invite-button"
+- waitForAnimationToEnd
+- takeScreenshot: "assets/github/invites"
+
+# Add to cart
+- tapOn: "+"
+- waitForAnimationToEnd
+- takeScreenshot: "assets/github/cart"
+
+# Summary tab
+- tapOn: "Summary"
+- waitForAnimationToEnd
+- takeScreenshot: "assets/github/order-summary"

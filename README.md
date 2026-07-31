@@ -16,12 +16,22 @@ GoDash is a lightweight DoorDash-style group ordering demo built with Expo + Rea
 - **Host-only checkout**
   - Summary breakdown by participant
   - Checkout action restricted to host
+- **Join flow + deep link invites**
+  - Share a `/join` deep link so participants can join with a group ID
+  - Invited participants can join via the Join screen
+- **Participant status**
+  - Tracks who has joined vs who is still invited
+- **Real-time-ish sync**
+  - Polls the backend for group updates
 - **Invite emails (AWS SES, optional)**
   - Backend can send an invite email on successful invite
   - Disabled by default for the POC
 - **Push notifications (Expo)**
   - Registers an Expo push token per participant
   - Sends a push notification when an invited participant has a registered token
+- **Basic order constraints**
+  - Max quantity per item (backend enforced)
+  - Cannot checkout an empty order (backend enforced)
 - **Light/Dark theme support**
   - Themed UI components and brand color `#c92138`
 
@@ -65,14 +75,40 @@ Example:
 AWS_REGION=us-east-1 SES_FROM_EMAIL=you@yourdomain.com SES_SEND_INVITES=true npm run backend
 ```
 
-4. (Optional) Push notifications
+4. (Optional) MongoDB persistence
+
+By default the backend stores group state in memory.
+To persist groups across backend restarts, set:
+
+- `MONGODB_URI`
+- `MONGODB_DB` (optional; defaults to `godash`)
+
+Example:
+
+```bash
+MONGODB_URI="mongodb+srv://..." MONGODB_DB=godash npm run backend
+```
+
+5. (Optional) Order constraints
+
+The backend enforces a per-item quantity limit:
+
+- `MAX_QTY_PER_ITEM` (default: `10`)
+
+Example:
+
+```bash
+MAX_QTY_PER_ITEM=10 npm run backend
+```
+
+6. (Optional) Push notifications
 
 Push notifications use Expo push tokens.
 
 - iOS Simulator won’t receive push notifications.
 - Use a physical device + a dev build for end-to-end testing.
 
-5. Start the Expo app
+7. Start the Expo app
 
 ```bash
 npx expo start

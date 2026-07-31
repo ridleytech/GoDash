@@ -7,11 +7,11 @@ const { sendInviteEmail } = require("./lib/ses");
 const { sendExpoPush } = require("./lib/push");
 const { computeSummary } = require("./lib/summary");
 const { isValidEmail, normalizeEmail } = require("./lib/validators");
+const { createGroup, getGroup, saveGroup } = require("./lib/store");
 
 const PORT = Number(process.env.PORT || 3001);
 
-/** @type {Map<string, any>} */
-const groups = new Map();
+const MAX_QTY_PER_ITEM = Number(process.env.MAX_QTY_PER_ITEM || 10);
 
 /** @type {Map<string, string>} */
 const pushTokensByEmail = new Map();
@@ -65,7 +65,7 @@ const server = http.createServer(async (req, res) => {
         createdAt: Date.now(),
         checkedOutAt: null,
       };
-      groups.set(groupId, group);
+      await createGroup(group);
       return json(res, 200, { group });
     }
 
@@ -73,7 +73,7 @@ const server = http.createServer(async (req, res) => {
     if (groupIdMatch) {
       const groupId = groupIdMatch[1];
       const action = groupIdMatch[2] || "";
-      const group = groups.get(groupId);
+      const group = await getGroup(groupId);
       if (!group) return json(res, 404, { error: "group_not_found" });
 
       if (req.method === "GET" && action === "") {
@@ -93,7 +93,7 @@ const server = http.createServer(async (req, res) => {
           ? group.joinedEmails
           : [];
         if (!group.joinedEmails.includes(email)) group.joinedEmails.push(email);
-
+        await saveGroup(group);
         return json(res, 200, { group, summary: computeSummary(group) });
       }
 
@@ -140,6 +140,7 @@ const server = http.createServer(async (req, res) => {
             e instanceof Error ? e.message : String(e),
           );
         }
+        await saveGroup(group);
         return json(res, 200, { group, summary: computeSummary(group) });
       }
 
@@ -147,7 +148,11 @@ const server = http.createServer(async (req, res) => {
         const body = await readJson(req);
         const email = normalizeEmail(body.email);
         group.invitedEmails = group.invitedEmails.filter((e) => e !== email);
+        if (Array.isArray(group.joinedEmails)) {
+          group.joinedEmails = group.joinedEmails.filter((e) => e !== email);
+        }
         delete group.cartsByEmail[email];
+        await saveGroup(group);
         return json(res, 200, { group, summary: computeSummary(group) });
       }
 
@@ -168,10 +173,19 @@ const server = http.createServer(async (req, res) => {
         const cart = group.cartsByEmail[email] || {};
         const currentQty = Number(cart[productId] || 0);
         const nextQty = Math.max(0, currentQty + delta);
+
+        if (Number.isFinite(MAX_QTY_PER_ITEM) && MAX_QTY_PER_ITEM > 0) {
+          if (nextQty > MAX_QTY_PER_ITEM)
+            return badRequest(
+              res,
+              `Max quantity per item is ${MAX_QTY_PER_ITEM}`,
+            );
+        }
+
         if (nextQty === 0) delete cart[productId];
         else cart[productId] = nextQty;
         group.cartsByEmail[email] = cart;
-
+        await saveGroup(group);
         return json(res, 200, { group, summary: computeSummary(group) });
       }
 
@@ -183,8 +197,14 @@ const server = http.createServer(async (req, res) => {
             error: "forbidden",
             message: "Only host can checkout",
           });
+
+        const summary = computeSummary(group);
+        if (!summary.totalCents || summary.totalCents <= 0)
+          return badRequest(res, "Cannot checkout with an empty order");
+
         group.checkedOutAt = Date.now();
-        return json(res, 200, { group, summary: computeSummary(group) });
+        await saveGroup(group);
+        return json(res, 200, { group, summary });
       }
 
       return notFound(res);

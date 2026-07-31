@@ -119,6 +119,13 @@ export default function TabTwoScreen() {
                   selectors.isHostActive ? (
                     <Pressable
                       onPress={() => {
+                        if (selectors.getTotalCents() <= 0) {
+                          Alert.alert(
+                            "Nothing to checkout",
+                            "Add at least one item before checking out.",
+                          );
+                          return;
+                        }
                         const lines = selectors.participants.map((email) => {
                           const who =
                             email === state.hostEmail ? "Host" : email;
@@ -148,6 +155,7 @@ export default function TabTwoScreen() {
                       }}
                       style={({ pressed }) => [
                         styles.primaryButton,
+                        selectors.getTotalCents() <= 0 && styles.disabledButton,
                         pressed && styles.pressed,
                       ]}
                     >
@@ -231,6 +239,9 @@ const styles = StyleSheet.create({
     borderRadius: Spacing.two,
     alignItems: "center",
     justifyContent: "center",
+  },
+  disabledButton: {
+    opacity: 0.5,
   },
   primaryButtonText: {
     color: "#ffffff",

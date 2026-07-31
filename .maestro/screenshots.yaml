@@ -44,3 +44,12 @@ appId: host.exp.Exponent
 - tapOn: "Summary"
 - waitForAnimationToEnd
 - takeScreenshot: "assets/github/order-summary"
+
+# PaymentSheet (requires a dev build; not supported in Expo Go)
+- takeScreenshot: "assets/github/payment-summary"
+- tapOn: "Pay with Stripe"
+- extendedWaitUntil:
+    visible:
+      text: "Pay"
+    timeout: 30000
+- takeScreenshot: "assets/github/payment-sheet"

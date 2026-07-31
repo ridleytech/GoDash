@@ -16,6 +16,9 @@ GoDash is a lightweight DoorDash-style group ordering demo built with Expo + Rea
 - **Host-only checkout**
   - Summary breakdown by participant
   - Checkout action restricted to host
+- **Stripe payments (PaymentSheet, test mode)**
+  - Host can pay in-app using Stripe PaymentSheet
+  - Backend is the source of truth for order totals
 - **Join flow + deep link invites**
   - Share a `/join` deep link so participants can join with a group ID
   - Invited participants can join via the Join screen
@@ -59,7 +62,58 @@ npm install
 npm run backend
 ```
 
-3. (Optional) Invite emails via AWS SES
+3. (Optional) Stripe payments (PaymentSheet)
+
+Stripe PaymentSheet requires a development build (it does not work in Expo Go).
+
+Backend env vars:
+
+- `STRIPE_SECRET_KEY`
+- `STRIPE_PUBLISHABLE_KEY`
+- `STRIPE_WEBHOOK_SECRET` (optional; only needed if you want webhook verification)
+- `STRIPE_API_VERSION` (optional; defaults to `2024-06-20`)
+
+There is a sample file at `backend/.env.example`.
+
+App env vars:
+
+- `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY` (same as `STRIPE_PUBLISHABLE_KEY`)
+
+Example:
+
+```bash
+STRIPE_SECRET_KEY=sk_test_... STRIPE_PUBLISHABLE_KEY=pk_test_... npm run backend
+```
+
+Webhook (optional):
+
+1. Install Stripe CLI
+
+```bash
+brew install stripe/stripe-cli/stripe
+```
+
+2. Login
+
+```bash
+stripe login
+```
+
+3. Forward webhooks to your local backend
+
+```bash
+stripe listen --forward-to localhost:3001/stripe/webhook
+```
+
+The CLI will print a signing secret like `whsec_...`.
+
+4. Start backend with webhook secret
+
+```bash
+STRIPE_WEBHOOK_SECRET=whsec_... STRIPE_SECRET_KEY=sk_test_... STRIPE_PUBLISHABLE_KEY=pk_test_... npm run backend
+```
+
+4. (Optional) Invite emails via AWS SES
 
 Invite emails are sent by the backend when an invite succeeds.
 
@@ -75,7 +129,7 @@ Example:
 AWS_REGION=us-east-1 SES_FROM_EMAIL=you@yourdomain.com SES_SEND_INVITES=true npm run backend
 ```
 
-4. (Optional) MongoDB persistence
+5. (Optional) MongoDB persistence
 
 By default the backend stores group state in memory.
 To persist groups across backend restarts, set:
@@ -89,7 +143,7 @@ Example:
 MONGODB_URI="mongodb+srv://..." MONGODB_DB=godash npm run backend
 ```
 
-5. (Optional) Order constraints
+6. (Optional) Order constraints
 
 The backend enforces a per-item quantity limit:
 
@@ -101,14 +155,14 @@ Example:
 MAX_QTY_PER_ITEM=10 npm run backend
 ```
 
-6. (Optional) Push notifications
+7. (Optional) Push notifications
 
 Push notifications use Expo push tokens.
 
 - iOS Simulator won’t receive push notifications.
 - Use a physical device + a dev build for end-to-end testing.
 
-7. Start the Expo app
+8. Start the Expo app
 
 ```bash
 npx expo start
@@ -148,6 +202,8 @@ Screenshots are written to:
 - `assets/github/invites.png`
 - `assets/github/cart.png`
 - `assets/github/order-summary.png`
+- `assets/github/payment-summary.png` (dev build)
+- `assets/github/payment-sheet.png` (dev build)
 
 ## Backend URL
 

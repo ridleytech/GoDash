@@ -1,4 +1,8 @@
 import {
+  initPaymentSheet,
+  presentPaymentSheet,
+} from "@stripe/stripe-react-native";
+import {
   Alert,
   Platform,
   Pressable,
@@ -8,6 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { backendStripePaymentSheetParams } from "@/api/backend";
 import AppHeader from "@/components/app-header";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
@@ -117,55 +122,138 @@ export default function TabTwoScreen() {
               <ThemedView style={cardStyle}>
                 {
                   selectors.isHostActive ? (
-                    <Pressable
-                      onPress={() => {
-                        if (selectors.getTotalCents() <= 0) {
-                          Alert.alert(
-                            "Nothing to checkout",
-                            "Add at least one item before checking out.",
-                          );
-                          return;
-                        }
-                        const lines = selectors.participants.map((email) => {
-                          const who =
-                            email === state.hostEmail ? "Host" : email;
-                          const subtotal =
-                            selectors.getSubtotalCentsForEmail(email);
-                          return `${who}: ${formatMoney(subtotal)}`;
-                        });
+                    <View style={styles.columnButtons}>
+                      <Pressable
+                        onPress={async () => {
+                          if (selectors.getTotalCents() <= 0) {
+                            Alert.alert(
+                              "Nothing to checkout",
+                              "Add at least one item before checking out.",
+                            );
+                            return;
+                          }
 
-                        actions
-                          .checkout()
-                          .then(() => {
-                            Alert.alert(
-                              "Checkout summary",
-                              `${lines.join("\n")}\n\nTotal: ${formatMoney(
-                                selectors.getTotalCents(),
-                              )}`,
+                          if (!state.groupId) {
+                            Alert.alert("No active group");
+                            return;
+                          }
+
+                          try {
+                            const params =
+                              await backendStripePaymentSheetParams(
+                                state.groupId,
+                                state.hostEmail,
+                              );
+
+                            const init = await initPaymentSheet({
+                              paymentIntentClientSecret:
+                                params.paymentIntentClientSecret,
+                              customerId: params.customerId,
+                              customerEphemeralKeySecret:
+                                params.ephemeralKeySecret,
+                              merchantDisplayName: "GoDash",
+                            });
+                            if (init.error) {
+                              Alert.alert(
+                                "Payment setup failed",
+                                init.error.message,
+                              );
+                              return;
+                            }
+
+                            const presented = await presentPaymentSheet();
+                            if (presented.error) {
+                              Alert.alert(
+                                "Payment failed",
+                                presented.error.message,
+                              );
+                              return;
+                            }
+
+                            const lines = selectors.participants.map(
+                              (email) => {
+                                const who =
+                                  email === state.hostEmail ? "Host" : email;
+                                const subtotal =
+                                  selectors.getSubtotalCentsForEmail(email);
+                                return `${who}: ${formatMoney(subtotal)}`;
+                              },
                             );
-                          })
-                          .catch((e) => {
+
+                            await actions.checkout();
                             Alert.alert(
-                              "Checkout failed",
-                              e instanceof Error
-                                ? e.message
-                                : "Checkout failed",
+                              "Payment succeeded",
+                              `${lines.join("\n")}
+\nTotal: ${formatMoney(selectors.getTotalCents())}`,
                             );
-                          });
-                      }}
-                      style={({ pressed }) => [
-                        styles.primaryButton,
-                        selectors.getTotalCents() <= 0 && styles.disabledButton,
-                        pressed && styles.pressed,
-                      ]}
-                    >
-                      <ThemedText
-                        type="smallBold"
-                        style={styles.primaryButtonText}
+                          } catch (e) {
+                            Alert.alert(
+                              "Payment failed",
+                              e instanceof Error ? e.message : "Payment failed",
+                            );
+                          }
+                        }}
+                        style={({ pressed }) => [
+                          styles.primaryButton,
+                          selectors.getTotalCents() <= 0 &&
+                            styles.disabledButton,
+                          pressed && styles.pressed,
+                        ]}
                       >
-                        Checkout
-                      </ThemedText>
-                    </Pressable>
+                        <ThemedText
+                          type="smallBold"
+                          style={styles.primaryButtonText}
+                        >
+                          Pay with Stripe
+                        </ThemedText>
+                      </Pressable>
+
+                      <Pressable
+                        onPress={() => {
+                          if (selectors.getTotalCents() <= 0) {
+                            Alert.alert(
+                              "Nothing to checkout",
+                              "Add at least one item before checking out.",
+                            );
+                            return;
+                          }
+                          const lines = selectors.participants.map((email) => {
+                            const who =
+                              email === state.hostEmail ? "Host" : email;
+                            const subtotal =
+                              selectors.getSubtotalCentsForEmail(email);
+                            return `${who}: ${formatMoney(subtotal)}`;
+                          });
+
+                          actions
+                            .checkout()
+                            .then(() => {
+                              Alert.alert(
+                                "Checkout summary",
+                                `${lines.join("\n")}\n\nTotal: ${formatMoney(
+                                  selectors.getTotalCents(),
+                                )}`,
+                              );
+                            })
+                            .catch((e) => {
+                              Alert.alert(
+                                "Checkout failed",
+                                e instanceof Error
+                                  ? e.message
+                                  : "Checkout failed",
+                              );
+                            });
+                        }}
+                        style={({ pressed }) => [
+                          styles.secondaryPayButton,
+                          selectors.getTotalCents() <= 0 &&
+                            styles.disabledButton,
+                          pressed && styles.pressed,
+                        ]}
+                      >
+                        <ThemedText type="smallBold">Checkout</ThemedText>
+                      </Pressable>
+                    </View>
                   ) : null
                   // <ThemedText type="small" themeColor="textSecondary">
                   //   Only the host can checkout. Switch to the host on the
@@ -240,10 +328,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  secondaryPayButton: {
+    backgroundColor: "#00000010",
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    borderRadius: Spacing.two,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   disabledButton: {
     opacity: 0.5,
   },
   primaryButtonText: {
     color: "#ffffff",
+  },
+  columnButtons: {
+    gap: Spacing.two,
   },
 });

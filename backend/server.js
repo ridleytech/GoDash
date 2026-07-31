@@ -2,12 +2,22 @@ const http = require("http");
 const { randomUUID } = require("crypto");
 
 const { MENU_PRODUCTS } = require("./data/menu");
-const { badRequest, json, notFound, readJson } = require("./lib/http");
+const { badRequest, json, notFound, readJson, readRaw } = require("./lib/http");
 const { sendInviteEmail } = require("./lib/ses");
 const { sendExpoPush } = require("./lib/push");
 const { computeSummary } = require("./lib/summary");
 const { isValidEmail, normalizeEmail } = require("./lib/validators");
 const { createGroup, getGroup, saveGroup } = require("./lib/store");
+
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "";
+const STRIPE_PUBLISHABLE_KEY = process.env.STRIPE_PUBLISHABLE_KEY || "";
+const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || "";
+const STRIPE_API_VERSION = process.env.STRIPE_API_VERSION || "2024-06-20";
+let stripe = null;
+if (STRIPE_SECRET_KEY) {
+  const Stripe = require("stripe");
+  stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: STRIPE_API_VERSION });
+}
 
 const PORT = Number(process.env.PORT || 3001);
 
@@ -67,6 +77,95 @@ const server = http.createServer(async (req, res) => {
       };
       await createGroup(group);
       return json(res, 200, { group });
+    }
+
+    if (req.method === "POST" && path === "/stripe/payment-sheet") {
+      const body = await readJson(req);
+      const groupId = String(body.groupId || "");
+      const email = normalizeEmail(body.email);
+      if (!groupId) return badRequest(res, "Invalid groupId");
+      if (!isValidEmail(email)) return badRequest(res, "Invalid email");
+      if (!stripe) return json(res, 500, { error: "stripe_not_configured" });
+      if (!STRIPE_PUBLISHABLE_KEY)
+        return json(res, 500, { error: "missing_publishable_key" });
+
+      const group = await getGroup(groupId);
+      if (!group) return json(res, 404, { error: "group_not_found" });
+      if (email !== group.hostEmail)
+        return json(res, 403, {
+          error: "forbidden",
+          message: "Only host can initiate payment",
+        });
+
+      const summary = computeSummary(group);
+      if (!summary.totalCents || summary.totalCents <= 0)
+        return badRequest(res, "Cannot pay for an empty order");
+
+      const customer = await stripe.customers.create({
+        email: group.hostEmail,
+        metadata: { groupId },
+      });
+
+      const ephemeralKey = await stripe.ephemeralKeys.create(
+        { customer: customer.id },
+        { apiVersion: STRIPE_API_VERSION },
+      );
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: summary.totalCents,
+        currency: "usd",
+        customer: customer.id,
+        automatic_payment_methods: { enabled: true },
+        metadata: { groupId, hostEmail: group.hostEmail },
+      });
+
+      return json(res, 200, {
+        paymentIntentClientSecret: paymentIntent.client_secret,
+        customerId: customer.id,
+        ephemeralKeySecret: ephemeralKey.secret,
+        publishableKey: STRIPE_PUBLISHABLE_KEY,
+      });
+    }
+
+    if (req.method === "POST" && path === "/stripe/webhook") {
+      if (!stripe) return json(res, 500, { error: "stripe_not_configured" });
+      if (!STRIPE_WEBHOOK_SECRET)
+        return json(res, 500, { error: "missing_webhook_secret" });
+
+      const sig = String(req.headers["stripe-signature"] || "");
+      if (!sig) return badRequest(res, "Missing Stripe-Signature header");
+
+      const raw = await readRaw(req);
+      let event;
+      try {
+        event = stripe.webhooks.constructEvent(raw, sig, STRIPE_WEBHOOK_SECRET);
+      } catch (e) {
+        return json(res, 400, {
+          error: "invalid_signature",
+          message: e instanceof Error ? e.message : "Invalid signature",
+        });
+      }
+
+      if (event.type === "payment_intent.succeeded") {
+        const intent = event.data.object;
+        const groupId = intent?.metadata?.groupId;
+        if (groupId) {
+          const group = await getGroup(String(groupId));
+          if (group) {
+            group.checkedOutAt = group.checkedOutAt || Date.now();
+            group.stripe = {
+              paymentIntentId: intent.id,
+              status: intent.status,
+              amount: intent.amount,
+              currency: intent.currency,
+              updatedAt: Date.now(),
+            };
+            await saveGroup(group);
+          }
+        }
+      }
+
+      return json(res, 200, { received: true });
     }
 
     const groupIdMatch = path.match(/^\/groups\/([^/]+)(?:\/(.+))?$/);

@@ -3,6 +3,7 @@ import {
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
+import { StripeProvider } from "@stripe/stripe-react-native";
 import * as SplashScreen from "expo-splash-screen";
 import { useColorScheme } from "react-native";
 
@@ -14,12 +15,15 @@ SplashScreen.preventAutoHideAsync();
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const publishableKey = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <GroupOrderProvider>
-        <AnimatedSplashOverlay />
-        <AppTabs />
-      </GroupOrderProvider>
+      <StripeProvider publishableKey={publishableKey}>
+        <GroupOrderProvider>
+          <AnimatedSplashOverlay />
+          <AppTabs />
+        </GroupOrderProvider>
+      </StripeProvider>
     </ThemeProvider>
   );
 }

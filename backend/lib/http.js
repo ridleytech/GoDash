@@ -1,9 +1,11 @@
+const { Buffer } = require("node:buffer");
+
 function json(res, status, body) {
   res.writeHead(status, {
     "Content-Type": "application/json; charset=utf-8",
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET,POST,DELETE,OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Headers": "Content-Type,Stripe-Signature",
   });
   res.end(JSON.stringify(body));
 }
@@ -37,9 +39,29 @@ function readJson(req) {
   });
 }
 
+function readRaw(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let total = 0;
+    req.on("data", (chunk) => {
+      chunks.push(chunk);
+      total += chunk.length;
+      if (total > 5_000_000) {
+        reject(new Error("payload_too_large"));
+        req.destroy();
+      }
+    });
+    req.on("end", () => {
+      resolve(Buffer.concat(chunks));
+    });
+    req.on("error", reject);
+  });
+}
+
 module.exports = {
   json,
   notFound,
   badRequest,
   readJson,
+  readRaw,
 };

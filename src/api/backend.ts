@@ -126,6 +126,21 @@ export async function backendCheckout(groupId: string, email: string) {
   );
 }
 
+export async function backendStripePaymentSheetParams(
+  groupId: string,
+  email: string,
+) {
+  return request<{
+    paymentIntentClientSecret: string;
+    customerId: string;
+    ephemeralKeySecret: string;
+    publishableKey: string;
+  }>("/stripe/payment-sheet", {
+    method: "POST",
+    body: JSON.stringify({ groupId, email }),
+  });
+}
+
 export async function backendRegisterPushToken(email: string, token: string) {
   return request<{ ok: true }>("/push/register", {
     method: "POST",

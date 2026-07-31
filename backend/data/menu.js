@@ -1,24 +1,24 @@
 const MENU_PRODUCTS = [
   {
-    id: "impossible-burger",
-    name: "Impossible Burger",
+    id: "orange-dream-machine",
+    name: "Orange Dream Machine",
+    priceCents: 659,
+    imageUrl:
+      "https://www.jamba.com/_next/image?url=https%3A%2F%2Fctfassets.gotofoods.com%2Fzqt8tllj2cy0%2F6ni1SBAVpcxIzlMLescuio%2Fa15d0bb83ee1e47848daac06e3d8213d%2F746x600_Orange_Dream_Machine_OH.png&w=1920&q=75",
+  },
+  {
+    id: "strawberry-surf-rider",
+    name: "Strawberry Surf Rider",
+    priceCents: 659,
+    imageUrl:
+      "https://www.jamba.com/_next/image?url=https%3A%2F%2Fctfassets.gotofoods.com%2Fzqt8tllj2cy0%2F6ZYI7KsKiCfyUar5GAFJU5%2Fcf4723f8910812328d8154b3510ee387%2F746x600_Strawberry_Surf_Rider_OH.png&w=1920&q=75",
+  },
+  {
+    id: "acai-primo-bowl",
+    name: "Açaí Primo Bowl",
     priceCents: 899,
     imageUrl:
-      "https://images.ctfassets.net/hhv516v5f7sj/5wJjddNA6Rv3Bq23HjSkv5/309bd1b40afe63fb925afa38c0f2b104/southwest-burger-patties-cutout-image-1500x500.png",
-  },
-  {
-    id: "cajun-fries",
-    name: "Cajun Fries",
-    priceCents: 349,
-    imageUrl:
-      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTbx3G_da4Ll0SSzG8Ut6ZK0FUGuF7GTFiXfSt5MHRWuGYdKmgjEopBX9Hi&s=10",
-  },
-  {
-    id: "peach-lemonade",
-    name: "Peach Lemonade",
-    priceCents: 499,
-    imageUrl:
-      "https://www.themediterraneandish.com/wp-content/uploads/2024/06/peach-lemonade-edited-13.jpg",
+      "https://www.jamba.com/_next/image?url=https%3A%2F%2Fctfassets.gotofoods.com%2Fzqt8tllj2cy0%2F1mrn6H4sPm4CKBhltkPuaR%2Fa3aa56e80a1cf506119e726c3045337f%2FJJ_1454718_746x600_LEVEL_Acai_Primo_Both_Sizes.png&w=1920&q=75",
   },
 ];
 

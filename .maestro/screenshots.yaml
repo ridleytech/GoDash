@@ -47,7 +47,7 @@ appId: host.exp.Exponent
 
 # PaymentSheet (requires a dev build; not supported in Expo Go)
 - takeScreenshot: "assets/github/payment-summary"
-- tapOn: "Pay with Stripe"
+- tapOn: "Pay"
 - extendedWaitUntil:
     visible:
       text: "Pay"

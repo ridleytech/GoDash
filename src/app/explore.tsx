@@ -204,7 +204,7 @@ export default function TabTwoScreen() {
                           type="smallBold"
                           style={styles.primaryButtonText}
                         >
-                          Pay with Stripe
+                          Pay
                         </ThemedText>
                       </Pressable>
 

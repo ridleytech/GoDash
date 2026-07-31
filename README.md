@@ -168,43 +168,6 @@ Push notifications use Expo push tokens.
 npx expo start
 ```
 
-## Automated screenshots
-
-This repo includes a Maestro flow that drives the iOS Simulator UI and saves screenshots into `assets/github/`.
-
-1. Install Maestro (once)
-
-```bash
-brew install maestro
-```
-
-If the `maestro` CLI is not available after installing the app, install the CLI as well:
-
-```bash
-curl -Ls "https://get.maestro.mobile.dev" | bash
-```
-
-2. Start the app in the iOS Simulator
-
-```bash
-npx expo start
-```
-
-3. Run the screenshot flow
-
-```bash
-EXPO_URL="exp://127.0.0.1:8081" npm run screenshots:ios
-```
-
-Screenshots are written to:
-
-- `assets/github/start-order.png`
-- `assets/github/invites.png`
-- `assets/github/cart.png`
-- `assets/github/order-summary.png`
-- `assets/github/payment-summary.png` (dev build)
-- `assets/github/payment-sheet.png` (dev build)
-
 ## Backend URL
 
 By default the app uses `http://localhost:3001`.

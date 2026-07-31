@@ -47,134 +47,126 @@ export default function TabTwoScreen() {
           stickyHeaderIndices={[0]}
         >
           <AppHeader />
-          <ThemedView style={styles.titleContainer}>
-            <ThemedText type="subtitle">Order Summary</ThemedText>
-            {/* <ThemedText style={styles.centerText} themeColor="textSecondary">
-              Host can review the full order broken down by participant.
-            </ThemedText> */}
-          </ThemedView>
 
-          <ThemedView style={styles.sectionsWrapper}>
-            {!state.hostEmail ? (
+          {!state.hostEmail ? (
+            <ThemedView style={cardStyle}>
+              <ThemedText type="smallBold">No active group</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                Go to the Group Order tab to create a group and invite people.
+              </ThemedText>
+            </ThemedView>
+          ) : (
+            <>
               <ThemedView style={cardStyle}>
-                <ThemedText type="smallBold">No active group</ThemedText>
+                <View style={styles.rowBetween}>
+                  <ThemedText type="smallBold">Total</ThemedText>
+                  <ThemedText type="smallBold">
+                    {formatMoney(selectors.getTotalCents())}
+                  </ThemedText>
+                </View>
                 <ThemedText type="small" themeColor="textSecondary">
-                  Go to the Group Order tab to create a group and invite people.
+                  Host: {state.hostEmail}
                 </ThemedText>
               </ThemedView>
-            ) : (
-              <>
-                <ThemedView style={cardStyle}>
-                  <View style={styles.rowBetween}>
-                    <ThemedText type="smallBold">Total</ThemedText>
-                    <ThemedText type="smallBold">
-                      {formatMoney(selectors.getTotalCents())}
-                    </ThemedText>
-                  </View>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    Host: {state.hostEmail}
-                  </ThemedText>
-                </ThemedView>
 
-                {selectors.participants.map((email) => {
-                  const cart = state.cartsByEmail[email] ?? {};
-                  const subtotal = selectors.getSubtotalCentsForEmail(email);
-                  const label = email === state.hostEmail ? "Host" : email;
+              {selectors.participants.map((email) => {
+                const cart = state.cartsByEmail[email] ?? {};
+                const subtotal = selectors.getSubtotalCentsForEmail(email);
+                const label = email === state.hostEmail ? "Host" : email;
 
-                  return (
-                    <ThemedView key={email} style={cardStyle}>
-                      <View style={styles.rowBetween}>
-                        <ThemedText type="smallBold">{label}</ThemedText>
-                        <ThemedText type="smallBold">
-                          {formatMoney(subtotal)}
-                        </ThemedText>
+                return (
+                  <ThemedView key={email} style={cardStyle}>
+                    <View style={styles.rowBetween}>
+                      <ThemedText type="smallBold">{label}</ThemedText>
+                      <ThemedText type="smallBold">
+                        {formatMoney(subtotal)}
+                      </ThemedText>
+                    </View>
+
+                    {Object.keys(cart).length === 0 ? (
+                      <ThemedText type="small" themeColor="textSecondary">
+                        No items.
+                      </ThemedText>
+                    ) : (
+                      <View style={styles.itemsList}>
+                        {Object.entries(cart).map(([productId, qty]) => {
+                          const product = products.find(
+                            (p) => p.id === productId,
+                          );
+                          if (!product) return null;
+                          return (
+                            <View key={productId} style={styles.rowBetween}>
+                              <ThemedText type="small">
+                                {product.name}
+                              </ThemedText>
+                              <ThemedText
+                                type="small"
+                                themeColor="textSecondary"
+                              >
+                                {qty} x {formatMoney(product.priceCents)}
+                              </ThemedText>
+                            </View>
+                          );
+                        })}
                       </View>
+                    )}
+                  </ThemedView>
+                );
+              })}
 
-                      {Object.keys(cart).length === 0 ? (
-                        <ThemedText type="small" themeColor="textSecondary">
-                          No items.
-                        </ThemedText>
-                      ) : (
-                        <View style={styles.itemsList}>
-                          {Object.entries(cart).map(([productId, qty]) => {
-                            const product = products.find(
-                              (p) => p.id === productId,
-                            );
-                            if (!product) return null;
-                            return (
-                              <View key={productId} style={styles.rowBetween}>
-                                <ThemedText type="small">
-                                  {product.name}
-                                </ThemedText>
-                                <ThemedText
-                                  type="small"
-                                  themeColor="textSecondary"
-                                >
-                                  {qty} x {formatMoney(product.priceCents)}
-                                </ThemedText>
-                              </View>
-                            );
-                          })}
-                        </View>
-                      )}
-                    </ThemedView>
-                  );
-                })}
+              <ThemedView style={cardStyle}>
+                {
+                  selectors.isHostActive ? (
+                    <Pressable
+                      onPress={() => {
+                        const lines = selectors.participants.map((email) => {
+                          const who =
+                            email === state.hostEmail ? "Host" : email;
+                          const subtotal =
+                            selectors.getSubtotalCentsForEmail(email);
+                          return `${who}: ${formatMoney(subtotal)}`;
+                        });
 
-                <ThemedView style={cardStyle}>
-                  {
-                    selectors.isHostActive ? (
-                      <Pressable
-                        onPress={() => {
-                          const lines = selectors.participants.map((email) => {
-                            const who =
-                              email === state.hostEmail ? "Host" : email;
-                            const subtotal =
-                              selectors.getSubtotalCentsForEmail(email);
-                            return `${who}: ${formatMoney(subtotal)}`;
+                        actions
+                          .checkout()
+                          .then(() => {
+                            Alert.alert(
+                              "Checkout summary",
+                              `${lines.join("\n")}\n\nTotal: ${formatMoney(
+                                selectors.getTotalCents(),
+                              )}`,
+                            );
+                          })
+                          .catch((e) => {
+                            Alert.alert(
+                              "Checkout failed",
+                              e instanceof Error
+                                ? e.message
+                                : "Checkout failed",
+                            );
                           });
-
-                          actions
-                            .checkout()
-                            .then(() => {
-                              Alert.alert(
-                                "Checkout summary",
-                                `${lines.join("\n")}\n\nTotal: ${formatMoney(
-                                  selectors.getTotalCents(),
-                                )}`,
-                              );
-                            })
-                            .catch((e) => {
-                              Alert.alert(
-                                "Checkout failed",
-                                e instanceof Error
-                                  ? e.message
-                                  : "Checkout failed",
-                              );
-                            });
-                        }}
-                        style={({ pressed }) => [
-                          styles.primaryButton,
-                          pressed && styles.pressed,
-                        ]}
+                      }}
+                      style={({ pressed }) => [
+                        styles.primaryButton,
+                        pressed && styles.pressed,
+                      ]}
+                    >
+                      <ThemedText
+                        type="smallBold"
+                        style={styles.primaryButtonText}
                       >
-                        <ThemedText
-                          type="smallBold"
-                          style={styles.primaryButtonText}
-                        >
-                          Checkout
-                        </ThemedText>
-                      </Pressable>
-                    ) : null
-                    // <ThemedText type="small" themeColor="textSecondary">
-                    //   Only the host can checkout. Switch to the host on the
-                    //   Group Order tab.
-                    // </ThemedText>
-                  }
-                </ThemedView>
-              </>
-            )}
-          </ThemedView>
+                        Checkout
+                      </ThemedText>
+                    </Pressable>
+                  ) : null
+                  // <ThemedText type="small" themeColor="textSecondary">
+                  //   Only the host can checkout. Switch to the host on the
+                  //   Group Order tab.
+                  // </ThemedText>
+                }
+              </ThemedView>
+            </>
+          )}
 
           {Platform.OS === "web" && <WebBadge />}
         </ScrollView>
@@ -201,12 +193,6 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.three,
     paddingBottom: Spacing.three,
     gap: Spacing.three,
-  },
-  titleContainer: {
-    gap: Spacing.three,
-    alignItems: "center",
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.six,
   },
   centerText: {
     textAlign: "center",

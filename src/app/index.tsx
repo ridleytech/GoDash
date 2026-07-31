@@ -56,12 +56,6 @@ export default function HomeScreen() {
           stickyHeaderIndices={[0]}
         >
           <AppHeader />
-          <ThemedView style={styles.header}>
-            <ThemedText type="subtitle">Group Order</ThemedText>
-            <ThemedText themeColor="textSecondary">
-              Invite up to 3 people, then everyone adds items to their own cart.
-            </ThemedText>
-          </ThemedView>
 
           {!state.hostEmail ? (
             <ThemedView style={cardStyle}>

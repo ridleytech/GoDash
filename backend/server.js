@@ -1,105 +1,16 @@
 const http = require("http");
 const { randomUUID } = require("crypto");
 
-const PORT = Number(process.env.PORT || 3001);
+const { MENU_PRODUCTS } = require("./data/menu");
+const { badRequest, json, notFound, readJson } = require("./lib/http");
+const { sendInviteEmail } = require("./lib/ses");
+const { computeSummary } = require("./lib/summary");
+const { isValidEmail, normalizeEmail } = require("./lib/validators");
 
-const MENU_PRODUCTS = [
-  {
-    id: "impossible-burger",
-    name: "Impossible Burger",
-    priceCents: 899,
-    imageUrl:
-      "https://images.ctfassets.net/hhv516v5f7sj/5wJjddNA6Rv3Bq23HjSkv5/309bd1b40afe63fb925afa38c0f2b104/southwest-burger-patties-cutout-image-1500x500.png",
-  },
-  {
-    id: "cajun-fries",
-    name: "Cajun Fries",
-    priceCents: 349,
-    imageUrl:
-      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTbx3G_da4Ll0SSzG8Ut6ZK0FUGuF7GTFiXfSt5MHRWuGYdKmgjEopBX9Hi&s=10",
-  },
-  {
-    id: "peach-lemonade",
-    name: "Peach Lemonade",
-    priceCents: 499,
-    imageUrl:
-      "https://www.themediterraneandish.com/wp-content/uploads/2024/06/peach-lemonade-edited-13.jpg",
-  },
-];
+const PORT = Number(process.env.PORT || 3001);
 
 /** @type {Map<string, any>} */
 const groups = new Map();
-
-function json(res, status, body) {
-  res.writeHead(status, {
-    "Content-Type": "application/json; charset=utf-8",
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET,POST,DELETE,OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
-  });
-  res.end(JSON.stringify(body));
-}
-
-function notFound(res) {
-  json(res, 404, { error: "not_found" });
-}
-
-function badRequest(res, message) {
-  json(res, 400, { error: "bad_request", message });
-}
-
-function normalizeEmail(value) {
-  return String(value || "")
-    .trim()
-    .toLowerCase();
-}
-
-function isValidEmail(email) {
-  return /^\S+@\S+\.\S+$/.test(email);
-}
-
-function getSubtotalCents(cartByProductId) {
-  return Object.entries(cartByProductId).reduce((sum, [productId, qty]) => {
-    const p = MENU_PRODUCTS.find((x) => x.id === productId);
-    if (!p) return sum;
-    return sum + p.priceCents * Number(qty || 0);
-  }, 0);
-}
-
-function computeSummary(group) {
-  const participants = [group.hostEmail, ...group.invitedEmails];
-  const breakdown = participants.map((email) => {
-    const cart = group.cartsByEmail[email] || {};
-    return {
-      email,
-      cart,
-      subtotalCents: getSubtotalCents(cart),
-    };
-  });
-  const totalCents = breakdown.reduce((sum, p) => sum + p.subtotalCents, 0);
-  return { participants, breakdown, totalCents };
-}
-
-function readJson(req) {
-  return new Promise((resolve, reject) => {
-    let data = "";
-    req.on("data", (chunk) => {
-      data += chunk;
-      if (data.length > 1_000_000) {
-        reject(new Error("payload_too_large"));
-        req.destroy();
-      }
-    });
-    req.on("end", () => {
-      if (!data) return resolve({});
-      try {
-        resolve(JSON.parse(data));
-      } catch (e) {
-        reject(e);
-      }
-    });
-  });
-}
 
 const server = http.createServer(async (req, res) => {
   try {
@@ -167,6 +78,19 @@ const server = http.createServer(async (req, res) => {
 
         group.invitedEmails.push(email);
         group.cartsByEmail[email] = group.cartsByEmail[email] || {};
+
+        try {
+          await sendInviteEmail({
+            toEmail: email,
+            hostEmail: group.hostEmail,
+            groupId: group.id,
+          });
+        } catch (e) {
+          console.error(
+            "[SES] failed to send invite email",
+            e instanceof Error ? e.message : String(e),
+          );
+        }
         return json(res, 200, { group, summary: computeSummary(group) });
       }
 

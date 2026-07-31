@@ -114,3 +114,10 @@ export async function backendCheckout(groupId: string, email: string) {
     },
   );
 }
+
+export async function backendRegisterPushToken(email: string, token: string) {
+  return request<{ ok: true }>("/push/register", {
+    method: "POST",
+    body: JSON.stringify({ email, token }),
+  });
+}

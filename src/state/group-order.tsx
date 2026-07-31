@@ -15,8 +15,11 @@ import {
   backendInvite,
   backendMenu,
   BackendProduct,
+  backendRegisterPushToken,
   backendRemoveInvite,
 } from "@/api/backend";
+
+import { registerForPushNotificationsAsync } from "@/lib/push-notifications";
 
 export type Product = {
   id: string;
@@ -215,6 +218,15 @@ export function GroupOrderProvider({
         },
       };
     });
+
+    registerForPushNotificationsAsync()
+      .then((res) => {
+        if (!res.ok) return;
+        return backendRegisterPushToken(email, res.token);
+      })
+      .catch(() => {
+        // ignore
+      });
   }, []);
 
   const mutateCartQuantity = useCallback(

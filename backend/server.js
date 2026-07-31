@@ -4,6 +4,7 @@ const { randomUUID } = require("crypto");
 const { MENU_PRODUCTS } = require("./data/menu");
 const { badRequest, json, notFound, readJson } = require("./lib/http");
 const { sendInviteEmail } = require("./lib/ses");
+const { sendExpoPush } = require("./lib/push");
 const { computeSummary } = require("./lib/summary");
 const { isValidEmail, normalizeEmail } = require("./lib/validators");
 
@@ -11,6 +12,9 @@ const PORT = Number(process.env.PORT || 3001);
 
 /** @type {Map<string, any>} */
 const groups = new Map();
+
+/** @type {Map<string, string>} */
+const pushTokensByEmail = new Map();
 
 const server = http.createServer(async (req, res) => {
   try {
@@ -34,6 +38,16 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === "GET" && path === "/menu") {
       return json(res, 200, { products: MENU_PRODUCTS });
+    }
+
+    if (req.method === "POST" && path === "/push/register") {
+      const body = await readJson(req);
+      const email = normalizeEmail(body.email);
+      const token = String(body.token || "").trim();
+      if (!isValidEmail(email)) return badRequest(res, "Invalid email");
+      if (!token) return badRequest(res, "Invalid token");
+      pushTokensByEmail.set(email, token);
+      return json(res, 200, { ok: true });
     }
 
     if (req.method === "POST" && path === "/groups") {
@@ -78,6 +92,23 @@ const server = http.createServer(async (req, res) => {
 
         group.invitedEmails.push(email);
         group.cartsByEmail[email] = group.cartsByEmail[email] || {};
+
+        const inviteToken = pushTokensByEmail.get(email);
+        if (inviteToken) {
+          try {
+            await sendExpoPush({
+              to: inviteToken,
+              title: "GoDash invite",
+              body: `You were invited by ${group.hostEmail}`,
+              data: { groupId: group.id, hostEmail: group.hostEmail },
+            });
+          } catch (e) {
+            console.error(
+              "[push] failed to send invite push",
+              e instanceof Error ? e.message : String(e),
+            );
+          }
+        }
 
         try {
           await sendInviteEmail({

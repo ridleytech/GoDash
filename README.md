@@ -16,6 +16,12 @@ GoDash is a lightweight DoorDash-style group ordering demo built with Expo + Rea
 - **Host-only checkout**
   - Summary breakdown by participant
   - Checkout action restricted to host
+- **Invite emails (AWS SES, optional)**
+  - Backend can send an invite email on successful invite
+  - Disabled by default for the POC
+- **Push notifications (Expo)**
+  - Registers an Expo push token per participant
+  - Sends a push notification when an invited participant has a registered token
 - **Light/Dark theme support**
   - Themed UI components and brand color `#c92138`
 
@@ -43,7 +49,30 @@ npm install
 npm run backend
 ```
 
-3. Start the Expo app
+3. (Optional) Invite emails via AWS SES
+
+Invite emails are sent by the backend when an invite succeeds.
+
+- **Off by default**: set `SES_SEND_INVITES=true` to enable
+- **Required env vars**
+  - `AWS_REGION` (or `AWS_DEFAULT_REGION`)
+  - `SES_FROM_EMAIL`
+  - AWS credentials (standard AWS credential chain)
+
+Example:
+
+```bash
+AWS_REGION=us-east-1 SES_FROM_EMAIL=you@yourdomain.com SES_SEND_INVITES=true npm run backend
+```
+
+4. (Optional) Push notifications
+
+Push notifications use Expo push tokens.
+
+- iOS Simulator won’t receive push notifications.
+- Use a physical device + a dev build for end-to-end testing.
+
+5. Start the Expo app
 
 ```bash
 npx expo start

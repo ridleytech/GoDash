@@ -9,6 +9,7 @@ export type BackendGroup = {
   id: string;
   hostEmail: string;
   invitedEmails: string[];
+  joinedEmails?: string[];
   cartsByEmail: Record<string, Record<string, number>>;
   createdAt: number;
   checkedOutAt: number | null;
@@ -85,6 +86,16 @@ export async function backendRemoveInvite(groupId: string, email: string) {
     `/groups/${groupId}/invite`,
     {
       method: "DELETE",
+      body: JSON.stringify({ email }),
+    },
+  );
+}
+
+export async function backendJoinGroup(groupId: string, email: string) {
+  return request<{ group: BackendGroup; summary: BackendSummary }>(
+    `/groups/${groupId}/join`,
+    {
+      method: "POST",
       body: JSON.stringify({ email }),
     },
   );

@@ -11,8 +11,10 @@ import {
   backendCartDelta,
   backendCheckout,
   backendCreateGroup,
+  backendGetGroup,
   BackendGroup,
   backendInvite,
+  backendJoinGroup,
   backendMenu,
   BackendProduct,
   backendRegisterPushToken,
@@ -32,6 +34,7 @@ export type GroupOrderState = {
   groupId: string;
   hostEmail: string;
   invitedEmails: string[];
+  joinedEmails: string[];
   activeUserEmail: string;
   cartsByEmail: Record<string, Record<string, number>>;
 };
@@ -41,6 +44,11 @@ type GroupOrderContextValue = {
   products: Product[];
   actions: {
     startGroup: (hostEmail: string) => Promise<void>;
+    loadGroup: (
+      groupId: string,
+      email: string,
+    ) => Promise<{ ok: true } | { ok: false; reason: string }>;
+    refreshGroup: () => Promise<void>;
     resetGroup: () => void;
     addInvite: (
       email: string,
@@ -101,6 +109,7 @@ export function GroupOrderProvider({
     groupId: "",
     hostEmail: "",
     invitedEmails: [],
+    joinedEmails: [],
     activeUserEmail: "",
     cartsByEmail: {},
   });
@@ -119,11 +128,26 @@ export function GroupOrderProvider({
         groupId: group.id,
         hostEmail: group.hostEmail,
         invitedEmails,
+        joinedEmails: Array.isArray(group.joinedEmails)
+          ? group.joinedEmails
+          : [group.hostEmail],
         activeUserEmail: nextActive,
         cartsByEmail: group.cartsByEmail,
       };
     });
   }, []);
+
+  useEffect(() => {
+    if (!state.groupId) return;
+    const interval = setInterval(() => {
+      backendGetGroup(state.groupId)
+        .then((res) => applyBackendGroup(res.group))
+        .catch(() => {
+          // ignore
+        });
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [applyBackendGroup, state.groupId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -150,11 +174,54 @@ export function GroupOrderProvider({
     [applyBackendGroup],
   );
 
+  const refreshGroup = useCallback(async () => {
+    if (!state.groupId) return;
+    const res = await backendGetGroup(state.groupId);
+    applyBackendGroup(res.group);
+  }, [applyBackendGroup, state.groupId]);
+
+  const loadGroup = useCallback(
+    async (
+      groupIdRaw: string,
+      emailRaw: string,
+    ): Promise<{ ok: true } | { ok: false; reason: string }> => {
+      const groupId = String(groupIdRaw || "").trim();
+      const email = normalizeEmail(emailRaw);
+      if (!groupId) return { ok: false, reason: "Enter a group ID." };
+      if (!email) return { ok: false, reason: "Enter an email address." };
+      if (!/^\S+@\S+\.\S+$/.test(email))
+        return { ok: false, reason: "Enter a valid email address." };
+
+      try {
+        const res = await backendGetGroup(groupId);
+        const participants = [res.group.hostEmail, ...res.group.invitedEmails];
+        if (!participants.includes(email)) {
+          return {
+            ok: false,
+            reason: "That email is not invited to this group.",
+          };
+        }
+
+        applyBackendGroup(res.group);
+        await backendJoinGroup(groupId, email);
+        setActiveUserEmail(email);
+        return { ok: true };
+      } catch (e) {
+        return {
+          ok: false,
+          reason: e instanceof Error ? e.message : "Failed to load group.",
+        };
+      }
+    },
+    [applyBackendGroup, setActiveUserEmail],
+  );
+
   const resetGroup = useCallback(() => {
     setState({
       groupId: "",
       hostEmail: "",
       invitedEmails: [],
+      joinedEmails: [],
       activeUserEmail: "",
       cartsByEmail: {},
     });
@@ -328,6 +395,8 @@ export function GroupOrderProvider({
       products,
       actions: {
         startGroup,
+        loadGroup,
+        refreshGroup,
         resetGroup,
         addInvite,
         removeInvite,
@@ -362,6 +431,8 @@ export function GroupOrderProvider({
       resetGroup,
       setActiveUserEmail,
       startGroup,
+      loadGroup,
+      refreshGroup,
       state,
       checkout,
     ],

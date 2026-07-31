@@ -1,9 +1,11 @@
 import { Image } from "expo-image";
+import * as Linking from "expo-linking";
 import React from "react";
 import {
   Alert,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   TextInput,
   View,
@@ -108,15 +110,23 @@ export default function HomeScreen() {
                       {state.hostEmail}
                     </ThemedText>
                   </View>
+                </View>
 
+                <View style={styles.rowBetween}>
+                  <ThemedText type="smallBold">Invite link</ThemedText>
                   <Pressable
-                    onPress={actions.resetGroup}
+                    onPress={async () => {
+                      const url = Linking.createURL("/join", {
+                        queryParams: { groupId: state.groupId },
+                      });
+                      await Share.share({ message: url });
+                    }}
                     style={({ pressed }) => [
                       styles.secondaryButton,
                       pressed && styles.pressed,
                     ]}
                   >
-                    <ThemedText type="smallBold">Reset</ThemedText>
+                    <ThemedText type="smallBold">Share</ThemedText>
                   </Pressable>
                 </View>
 
@@ -172,7 +182,14 @@ export default function HomeScreen() {
                   ) : (
                     state.invitedEmails.map((email) => (
                       <View key={email} style={styles.rowBetween}>
-                        <ThemedText type="small">{email}</ThemedText>
+                        <View style={styles.column}>
+                          <ThemedText type="small">{email}</ThemedText>
+                          <ThemedText themeColor="textSecondary" type="small">
+                            {state.joinedEmails.includes(email)
+                              ? "Joined"
+                              : "Invited"}
+                          </ThemedText>
+                        </View>
                         <Pressable
                           onPress={() => actions.removeInvite(email)}
                           style={({ pressed }) => [
@@ -215,6 +232,13 @@ export default function HomeScreen() {
                     );
                   })}
                 </View>
+
+                <ThemedText themeColor="textSecondary" type="small">
+                  Status:{" "}
+                  {state.joinedEmails.includes(state.activeUserEmail)
+                    ? "Joined"
+                    : "Invited"}
+                </ThemedText>
               </ThemedView>
 
               <ThemedView style={cardStyle}>
@@ -371,6 +395,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: Spacing.two,
   },
+  rowButtons: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.two,
+  },
   column: {
     flexDirection: "column",
     gap: Spacing.half,
@@ -387,6 +416,11 @@ const styles = StyleSheet.create({
   },
   inviteList: {
     gap: Spacing.two,
+  },
+  inviteLinkText: {
+    flex: 1,
+    flexShrink: 1,
+    marginRight: Spacing.two,
   },
   primaryButton: {
     backgroundColor: "#c92138",

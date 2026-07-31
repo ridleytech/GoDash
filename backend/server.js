@@ -60,6 +60,7 @@ const server = http.createServer(async (req, res) => {
         id: groupId,
         hostEmail,
         invitedEmails: [],
+        joinedEmails: [hostEmail],
         cartsByEmail: { [hostEmail]: {} },
         createdAt: Date.now(),
         checkedOutAt: null,
@@ -76,6 +77,23 @@ const server = http.createServer(async (req, res) => {
       if (!group) return json(res, 404, { error: "group_not_found" });
 
       if (req.method === "GET" && action === "") {
+        return json(res, 200, { group, summary: computeSummary(group) });
+      }
+
+      if (req.method === "POST" && action === "join") {
+        const body = await readJson(req);
+        const email = normalizeEmail(body.email);
+        if (!isValidEmail(email)) return badRequest(res, "Invalid email");
+
+        const participants = [group.hostEmail, ...group.invitedEmails];
+        if (!participants.includes(email))
+          return badRequest(res, "Unknown participant email");
+
+        group.joinedEmails = Array.isArray(group.joinedEmails)
+          ? group.joinedEmails
+          : [];
+        if (!group.joinedEmails.includes(email)) group.joinedEmails.push(email);
+
         return json(res, 200, { group, summary: computeSummary(group) });
       }
 

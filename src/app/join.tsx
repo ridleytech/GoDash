@@ -1,3 +1,4 @@
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React from "react";
 import {
   Alert,
@@ -8,11 +9,10 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useLocalSearchParams, useRouter } from "expo-router";
 
-import AppHeader from "@/components/app-header";
-import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
+import AppHeader from "@/components/navigation/app-header";
+import { ThemedText } from "@/components/ui/themed-text";
+import { ThemedView } from "@/components/ui/themed-view";
 import { MaxContentWidth, Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import { useGroupOrder } from "@/state/group-order";
@@ -40,7 +40,10 @@ export default function JoinScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.content} stickyHeaderIndices={[0]}>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          stickyHeaderIndices={[0]}
+        >
           <AppHeader />
 
           <ThemedView style={cardStyle}>
@@ -87,14 +90,20 @@ export default function JoinScreen() {
 
             <Pressable
               onPress={async () => {
-                const result = await actions.loadGroup(groupIdDraft, emailDraft);
+                const result = await actions.loadGroup(
+                  groupIdDraft,
+                  emailDraft,
+                );
                 if (!result.ok) {
                   Alert.alert("Join failed", result.reason);
                   return;
                 }
                 router.replace("/");
               }}
-              style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
+              style={({ pressed }) => [
+                styles.primaryButton,
+                pressed && styles.pressed,
+              ]}
             >
               <ThemedText type="smallBold" style={styles.primaryButtonText}>
                 Join

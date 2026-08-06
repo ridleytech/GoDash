@@ -24,7 +24,7 @@ export default function AppTabs() {
       />
 
       <NativeTabs.Trigger
-        name="explore"
+        name="summary"
         options={{
           title: "Summary",
           icon: { src: require("@/assets/images/tabIcons/explore.png") },

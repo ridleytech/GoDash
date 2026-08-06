@@ -1,24 +1,19 @@
-import { Image } from "expo-image";
 import * as Linking from "expo-linking";
 import React from "react";
-import {
-  Alert,
-  Pressable,
-  ScrollView,
-  Share,
-  StyleSheet,
-  TextInput,
-  View,
-} from "react-native";
+import { Alert, ScrollView, Share, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import AppHeader from "@/components/app-header";
-import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
+import HomeCartCard from "@/components/home/home-cart-card";
+import HomeGroupSetupCard from "@/components/home/home-group-setup-card";
+import HomeMenuCard from "@/components/home/home-menu-card";
+import HomeOrderingAsCard from "@/components/home/home-ordering-as-card";
+import HomeStartGroupCard from "@/components/home/home-start-group-card";
+import AppHeader from "@/components/navigation/app-header";
+import { ThemedView } from "@/components/ui/themed-view";
 import { BottomTabInset, MaxContentWidth, Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import { registerForPushNotificationsAsync } from "@/lib/push-notifications";
-import { formatMoney, useGroupOrder } from "@/state/group-order";
+import { useGroupOrder } from "@/state/group-order";
 
 export default function HomeScreen() {
   const theme = useTheme();
@@ -61,319 +56,97 @@ export default function HomeScreen() {
           <AppHeader />
 
           {!state.hostEmail ? (
-            <ThemedView style={cardStyle}>
-              <ThemedText type="smallBold">Start a group</ThemedText>
-              <TextInput
-                testID="host-email-input"
-                value={hostEmailDraft}
-                onChangeText={setHostEmailDraft}
-                placeholder="host@email.com"
-                autoCapitalize="none"
-                keyboardType="email-address"
-                placeholderTextColor={theme.textSecondary}
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: theme.backgroundElement,
-                    borderColor: theme.backgroundSelected,
-                    color: theme.text,
-                  },
-                ]}
-              />
-              <Pressable
-                testID="create-group-button"
-                onPress={async () => {
-                  const email = hostEmailDraft.trim().toLowerCase();
-                  if (!/^\S+@\S+\.\S+$/.test(email)) {
-                    Alert.alert(
-                      "Invalid email",
-                      "Enter a valid host email address.",
-                    );
-                    return;
-                  }
-                  const result = await actions.startGroup(email);
-                  if (!result.ok) {
-                    Alert.alert("Create group failed", result.reason);
-                  }
-                }}
-                style={({ pressed }) => [
-                  styles.primaryButton,
-                  pressed && styles.pressed,
-                ]}
-              >
-                <ThemedText type="smallBold" style={styles.primaryButtonText}>
-                  Create group
-                </ThemedText>
-              </Pressable>
-            </ThemedView>
+            <HomeStartGroupCard
+              cardStyle={cardStyle}
+              theme={theme}
+              hostEmailDraft={hostEmailDraft}
+              setHostEmailDraft={setHostEmailDraft}
+              styles={styles}
+              onCreateGroup={async () => {
+                const email = hostEmailDraft.trim().toLowerCase();
+                if (!/^\S+@\S+\.\S+$/.test(email)) {
+                  Alert.alert(
+                    "Invalid email",
+                    "Enter a valid host email address.",
+                  );
+                  return;
+                }
+                const result = await actions.startGroup(email);
+                if (!result.ok) {
+                  Alert.alert("Create group failed", result.reason);
+                }
+              }}
+            />
           ) : (
             <>
-              <ThemedView style={cardStyle}>
-                <View style={styles.rowBetween}>
-                  <View style={styles.column}>
-                    <ThemedText type="smallBold">Host</ThemedText>
-                    <ThemedText themeColor="textSecondary" type="small">
-                      {state.hostEmail}
-                    </ThemedText>
-                  </View>
-                </View>
+              <HomeGroupSetupCard
+                cardStyle={cardStyle}
+                theme={theme}
+                hostEmail={state.hostEmail}
+                invitedEmails={state.invitedEmails}
+                joinedEmails={state.joinedEmails}
+                inviteDraft={inviteDraft}
+                setInviteDraft={setInviteDraft}
+                styles={styles}
+                onSharePushToken={async () => {
+                  const result = await registerForPushNotificationsAsync();
+                  if (!result.ok) {
+                    Alert.alert("Push setup", result.reason);
+                    return;
+                  }
+                  await Share.share({ message: result.token });
+                }}
+                onShareInviteLink={async () => {
+                  const url = Linking.createURL("/join", {
+                    queryParams: { groupId: state.groupId },
+                  });
+                  await Share.share({ message: url });
+                }}
+                onInvite={async () => {
+                  const result = await actions.addInvite(inviteDraft);
+                  if (result.ok) setInviteDraft("");
+                  else Alert.alert("Invite failed", result.reason);
+                }}
+                onRemoveInvite={(email) => actions.removeInvite(email)}
+              />
 
-                <View style={styles.rowBetween}>
-                  <ThemedText type="smallBold">Push token</ThemedText>
-                  <Pressable
-                    testID="copy-push-token-button"
-                    onPress={async () => {
-                      const result = await registerForPushNotificationsAsync();
-                      if (!result.ok) {
-                        Alert.alert("Push setup", result.reason);
-                        return;
-                      }
-                      await Share.share({ message: result.token });
-                    }}
-                    style={({ pressed }) => [
-                      styles.secondaryButton,
-                      pressed && styles.pressed,
-                    ]}
-                  >
-                    <ThemedText type="smallBold">Share</ThemedText>
-                  </Pressable>
-                </View>
+              <HomeOrderingAsCard
+                cardStyle={cardStyle}
+                participants={participants}
+                activeUserEmail={state.activeUserEmail}
+                hostEmail={state.hostEmail}
+                joinedEmails={state.joinedEmails}
+                onSetActiveUserEmail={(email) =>
+                  actions.setActiveUserEmail(email)
+                }
+                styles={styles}
+              />
 
-                <View style={styles.rowBetween}>
-                  <ThemedText type="smallBold">Invite link</ThemedText>
-                  <Pressable
-                    testID="share-invite-link-button"
-                    onPress={async () => {
-                      const url = Linking.createURL("/join", {
-                        queryParams: { groupId: state.groupId },
-                      });
-                      await Share.share({ message: url });
-                    }}
-                    style={({ pressed }) => [
-                      styles.secondaryButton,
-                      pressed && styles.pressed,
-                    ]}
-                  >
-                    <ThemedText type="smallBold">Share</ThemedText>
-                  </Pressable>
-                </View>
+              <HomeMenuCard
+                cardStyle={cardStyle}
+                products={products}
+                activeCart={activeCart}
+                onDecrement={(productId) =>
+                  actions.decrementFromCart(productId)
+                }
+                onIncrement={(productId) => actions.addToCart(productId)}
+                styles={styles}
+              />
 
-                <ThemedText type="smallBold" style={styles.sectionTitle}>
-                  Invite participants (max 3 total)
-                </ThemedText>
-                <View style={styles.row}>
-                  <TextInput
-                    testID="invite-email-input"
-                    value={inviteDraft}
-                    onChangeText={setInviteDraft}
-                    placeholder="friend@email.com"
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                    placeholderTextColor={theme.textSecondary}
-                    style={[
-                      styles.input,
-                      styles.inputRow,
-                      {
-                        backgroundColor: theme.backgroundElement,
-                        borderColor: theme.backgroundSelected,
-                        color: theme.text,
-                      },
-                    ]}
-                  />
-                  <Pressable
-                    testID="invite-button"
-                    disabled={state.invitedEmails.length >= 2}
-                    onPress={async () => {
-                      const result = await actions.addInvite(inviteDraft);
-                      if (result.ok) setInviteDraft("");
-                      else Alert.alert("Invite failed", result.reason);
-                    }}
-                    style={({ pressed }) => [
-                      styles.primaryButton,
-                      styles.primaryButtonRow,
-                      state.invitedEmails.length >= 2 && styles.disabled,
-                      pressed && styles.pressed,
-                    ]}
-                  >
-                    <ThemedText
-                      type="smallBold"
-                      style={styles.primaryButtonText}
-                    >
-                      Invite
-                    </ThemedText>
-                  </Pressable>
-                </View>
-
-                <View style={styles.inviteList}>
-                  {state.invitedEmails.length === 0 ? (
-                    <ThemedText themeColor="textSecondary" type="small">
-                      No invites yet.
-                    </ThemedText>
-                  ) : (
-                    state.invitedEmails.map((email) => (
-                      <View key={email} style={styles.rowBetween}>
-                        <View style={styles.column}>
-                          <ThemedText type="small">{email}</ThemedText>
-                          <ThemedText themeColor="textSecondary" type="small">
-                            {state.joinedEmails.includes(email)
-                              ? "Joined"
-                              : "Invited"}
-                          </ThemedText>
-                        </View>
-                        <Pressable
-                          onPress={() => actions.removeInvite(email)}
-                          style={({ pressed }) => [
-                            styles.secondaryButton,
-                            pressed && styles.pressed,
-                          ]}
-                        >
-                          <ThemedText type="smallBold">Remove</ThemedText>
-                        </Pressable>
-                      </View>
-                    ))
-                  )}
-                </View>
-              </ThemedView>
-
-              <ThemedView style={cardStyle}>
-                <ThemedText type="smallBold">Ordering as</ThemedText>
-                <View style={styles.userSwitcher}>
-                  {participants.map((email) => {
-                    const isActive = email === state.activeUserEmail;
-                    return (
-                      <Pressable
-                        key={email}
-                        onPress={() => actions.setActiveUserEmail(email)}
-                        style={({ pressed }) => [
-                          styles.userChip,
-                          isActive && styles.userChipActive,
-                          pressed && styles.pressed,
-                        ]}
-                      >
-                        <ThemedText
-                          type="smallBold"
-                          themeColor={isActive ? "text" : "textSecondary"}
-                        >
-                          {email === state.hostEmail
-                            ? "Host"
-                            : email.split("@")[0]}
-                        </ThemedText>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-
-                <ThemedText themeColor="textSecondary" type="small">
-                  Status:{" "}
-                  {state.joinedEmails.includes(state.activeUserEmail)
-                    ? "Joined"
-                    : "Invited"}
-                </ThemedText>
-              </ThemedView>
-
-              <ThemedView style={cardStyle}>
-                <ThemedText type="smallBold">Menu</ThemedText>
-                <View style={styles.menuList}>
-                  {products.map((p) => {
-                    const qty = activeCart[p.id] ?? 0;
-                    return (
-                      <View key={p.id} style={styles.menuRow}>
-                        <View style={styles.menuLeft}>
-                          <Image
-                            source={
-                              p.imageUrl ? { uri: p.imageUrl } : undefined
-                            }
-                            style={styles.thumb}
-                            contentFit="cover"
-                          />
-                          <View style={styles.column}>
-                            <ThemedText type="smallBold">{p.name}</ThemedText>
-                            <ThemedText type="small" themeColor="textSecondary">
-                              {formatMoney(p.priceCents)}
-                            </ThemedText>
-                          </View>
-                        </View>
-
-                        <View style={styles.qtyControls}>
-                          <Pressable
-                            onPress={() => actions.decrementFromCart(p.id)}
-                            style={({ pressed }) => [
-                              styles.qtyButton,
-                              pressed && styles.pressed,
-                            ]}
-                          >
-                            <ThemedText type="smallBold">-</ThemedText>
-                          </Pressable>
-                          <ThemedText type="smallBold" style={styles.qtyText}>
-                            {qty}
-                          </ThemedText>
-                          <Pressable
-                            onPress={() => actions.addToCart(p.id)}
-                            style={({ pressed }) => [
-                              styles.qtyButton,
-                              pressed && styles.pressed,
-                            ]}
-                          >
-                            <ThemedText type="smallBold">+</ThemedText>
-                          </Pressable>
-                        </View>
-                      </View>
-                    );
-                  })}
-                </View>
-              </ThemedView>
-
-              <ThemedView style={cardStyle}>
-                <View style={styles.rowBetween}>
-                  <ThemedText type="smallBold">Your cart</ThemedText>
-                  <ThemedText type="smallBold">
-                    {formatMoney(
-                      selectors.getSubtotalCentsForEmail(state.activeUserEmail),
-                    )}
-                  </ThemedText>
-                </View>
-
-                {Object.keys(activeCart).length === 0 ? (
-                  <ThemedText themeColor="textSecondary" type="small">
-                    Cart is empty.
-                  </ThemedText>
-                ) : (
-                  <View style={styles.cartList}>
-                    {Object.entries(activeCart).map(([productId, qty]) => (
-                      <View key={productId} style={styles.rowBetween}>
-                        <View style={styles.menuLeft}>
-                          <Image
-                            source={
-                              getProductImageUrl(productId)
-                                ? { uri: getProductImageUrl(productId) }
-                                : undefined
-                            }
-                            style={styles.thumbSmall}
-                            contentFit="cover"
-                          />
-                          <View style={styles.column}>
-                            <ThemedText type="smallBold">
-                              {getProductName(productId)}
-                            </ThemedText>
-                            <ThemedText themeColor="textSecondary" type="small">
-                              {qty} x {formatMoney(getProductPrice(productId))}
-                            </ThemedText>
-                          </View>
-                        </View>
-                        <Pressable
-                          onPress={() => actions.removeFromCart(productId)}
-                          style={({ pressed }) => [
-                            styles.secondaryButton,
-                            pressed && styles.pressed,
-                          ]}
-                        >
-                          <ThemedText type="smallBold">Remove</ThemedText>
-                        </Pressable>
-                      </View>
-                    ))}
-                  </View>
+              <HomeCartCard
+                cardStyle={cardStyle}
+                subtotalCents={selectors.getSubtotalCentsForEmail(
+                  state.activeUserEmail,
                 )}
-              </ThemedView>
+                activeCart={activeCart}
+                getProductName={getProductName}
+                getProductPrice={getProductPrice}
+                getProductImageUrl={getProductImageUrl}
+                onRemoveFromCart={(productId) =>
+                  actions.removeFromCart(productId)
+                }
+                styles={styles}
+              />
             </>
           )}
         </ScrollView>

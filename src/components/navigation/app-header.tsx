@@ -1,7 +1,7 @@
 import { Image } from "expo-image";
 import { StyleSheet } from "react-native";
 
-import { ThemedView } from "@/components/themed-view";
+import { ThemedView } from "@/components/ui/themed-view";
 import { Spacing } from "@/constants/theme";
 
 export default function AppHeader() {

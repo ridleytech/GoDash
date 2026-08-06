@@ -9,9 +9,9 @@ import {
 import { SymbolView } from "expo-symbols";
 import { Pressable, StyleSheet, useColorScheme, View } from "react-native";
 
-import { ExternalLink } from "./external-link";
-import { ThemedText } from "./themed-text";
-import { ThemedView } from "./themed-view";
+import { ExternalLink } from "../ui/external-link";
+import { ThemedText } from "../ui/themed-text";
+import { ThemedView } from "../ui/themed-view";
 
 import { Colors, MaxContentWidth, Spacing } from "@/constants/theme";
 
@@ -24,7 +24,7 @@ export default function AppTabs() {
           <TabTrigger name="home" href="/" asChild>
             <TabButton>Group Order</TabButton>
           </TabTrigger>
-          <TabTrigger name="explore" href="/explore" asChild>
+          <TabTrigger name="summary" href="/summary" asChild>
             <TabButton>Summary</TabButton>
           </TabTrigger>
         </CustomTabList>

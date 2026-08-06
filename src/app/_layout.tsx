@@ -7,8 +7,8 @@ import { StripeProvider } from "@stripe/stripe-react-native";
 import * as SplashScreen from "expo-splash-screen";
 import { useColorScheme } from "react-native";
 
-import { AnimatedSplashOverlay } from "@/components/animated-icon";
-import AppTabs from "@/components/app-tabs";
+import AppTabs from "@/components/navigation/app-tabs";
+import { AnimatedSplashOverlay } from "@/components/ui/animated-icon";
 import { GroupOrderProvider } from "@/state/group-order";
 
 SplashScreen.preventAutoHideAsync();

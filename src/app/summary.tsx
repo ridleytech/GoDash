@@ -13,10 +13,10 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { backendStripePaymentSheetParams } from "@/api/backend";
-import AppHeader from "@/components/app-header";
-import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
-import { WebBadge } from "@/components/web-badge";
+import AppHeader from "@/components/navigation/app-header";
+import { ThemedText } from "@/components/ui/themed-text";
+import { ThemedView } from "@/components/ui/themed-view";
+import { WebBadge } from "@/components/ui/web-badge";
 import { BottomTabInset, MaxContentWidth, Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import { formatMoney, useGroupOrder } from "@/state/group-order";

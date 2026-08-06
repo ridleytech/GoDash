@@ -16,7 +16,7 @@ appId: host.exp.Exponent
     visible:
       id: "invite-email-input"
     timeout: 30000
-- takeScreenshot: "assets/github/start-order"
+- takeScreenshot: ".github/screenshots/start-order"
 
 # Invites
 - scrollUntilVisible:
@@ -33,23 +33,23 @@ appId: host.exp.Exponent
 - tapOn:
     id: "invite-button"
 - waitForAnimationToEnd
-- takeScreenshot: "assets/github/invites"
+- takeScreenshot: ".github/screenshots/invites"
 
 # Add to cart
 - tapOn: "+"
 - waitForAnimationToEnd
-- takeScreenshot: "assets/github/cart"
+- takeScreenshot: ".github/screenshots/cart"
 
 # Summary tab
 - tapOn: "Summary"
 - waitForAnimationToEnd
-- takeScreenshot: "assets/github/order-summary"
+- takeScreenshot: ".github/screenshots/order-summary"
 
 # PaymentSheet (requires a dev build; not supported in Expo Go)
-- takeScreenshot: "assets/github/payment-summary"
+- takeScreenshot: ".github/screenshots/payment-summary"
 - tapOn: "Pay"
 - extendedWaitUntil:
     visible:
       text: "Pay"
     timeout: 30000
-- takeScreenshot: "assets/github/payment-sheet"
+- takeScreenshot: ".github/screenshots/payment-sheet"

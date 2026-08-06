@@ -40,17 +40,13 @@ GoDash is a lightweight DoorDash-style group ordering demo built with Expo + Rea
 
 ## Screenshots
 
-| Start order                                               | Invites                                               |
-| --------------------------------------------------------- | ----------------------------------------------------- |
-| <img src="./assets/github/start-order.png" width="320" /> | <img src="./assets/github/invites.png" width="320" /> |
+| Start order                                               | Menu + cart                                        |
+| --------------------------------------------------------- | -------------------------------------------------- |
+| <img src="./assets/github/start-order.png" width="320" /> | <img src="./assets/github/cart.png" width="320" /> |
 
-| Menu + cart                                        | Order summary                                               |
-| -------------------------------------------------- | ----------------------------------------------------------- |
-| <img src="./assets/github/cart.png" width="320" /> | <img src="./assets/github/order-summary.png" width="320" /> |
-
-| Debug outlines (component labels)                   |     |
-| --------------------------------------------------- | --- |
-| <img src="./assets/github/debug.png" width="320" /> |     |
+| Order summary                                               | Debug outlines (component labels)                   |
+| ----------------------------------------------------------- | --------------------------------------------------- |
+| <img src="./assets/github/order-summary.png" width="320" /> | <img src="./assets/github/debug.png" width="320" /> |
 
 ## Getting started
 

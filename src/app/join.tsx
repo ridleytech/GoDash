@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React from "react";
+import React, { useState } from "react";
 import {
   Alert,
   Pressable,
@@ -21,7 +21,7 @@ export default function JoinScreen() {
   const theme = useTheme();
   const router = useRouter();
   const params = useLocalSearchParams<{ groupId?: string }>();
-  const { actions } = useGroupOrder();
+  const { actions, pending } = useGroupOrder();
 
   const [groupIdDraft, setGroupIdDraft] = useState(
     typeof params.groupId === "string" ? params.groupId : "",
@@ -100,13 +100,15 @@ export default function JoinScreen() {
                 }
                 router.replace("/");
               }}
+              disabled={pending.loadGroup}
               style={({ pressed }) => [
                 styles.primaryButton,
+                pending.loadGroup && styles.disabledButton,
                 pressed && styles.pressed,
               ]}
             >
               <ThemedText type="smallBold" style={styles.primaryButtonText}>
-                Join
+                {pending.loadGroup ? "Joining..." : "Join"}
               </ThemedText>
             </Pressable>
           </ThemedView>
@@ -163,5 +165,8 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.7,
+  },
+  disabledButton: {
+    opacity: 0.5,
   },
 });

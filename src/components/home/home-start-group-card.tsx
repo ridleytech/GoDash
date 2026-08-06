@@ -11,6 +11,8 @@ type Props = {
   hostEmailDraft: string;
   setHostEmailDraft: (value: string) => void;
   onCreateGroup: () => Promise<void>;
+  createGroupDisabled?: boolean;
+  createGroupLabel?: string;
   styles: any;
 };
 
@@ -20,6 +22,8 @@ export default function HomeStartGroupCard({
   hostEmailDraft,
   setHostEmailDraft,
   onCreateGroup,
+  createGroupDisabled,
+  createGroupLabel,
   styles,
 }: Props) {
   return (
@@ -44,14 +48,16 @@ export default function HomeStartGroupCard({
       />
       <Pressable
         testID="create-group-button"
+        disabled={createGroupDisabled}
         onPress={onCreateGroup}
         style={({ pressed }) => [
           styles.primaryButton,
+          createGroupDisabled && styles.disabled,
           pressed && styles.pressed,
         ]}
       >
         <ThemedText type="smallBold" style={styles.primaryButtonText}>
-          Create group
+          {createGroupLabel ?? "Create group"}
         </ThemedText>
       </Pressable>
     </ThemedView>

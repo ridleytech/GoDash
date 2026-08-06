@@ -23,6 +23,9 @@ GoDash is a lightweight DoorDash-style group ordering demo built with Expo + Rea
   - Tracks who has joined vs who is still invited
 - **Real-time-ish sync**
   - Polls the backend for group updates
+- **Anti-spam API actions (in-flight guards)**
+  - Disables key buttons while API calls are in flight to prevent duplicate requests
+  - Shows in-progress UI labels (e.g. "Creating...", "Inviting...", "Joining...")
 - **Invite emails (AWS SES, optional)**
   - Backend can send an invite email on successful invite
   - Disabled by default for the POC

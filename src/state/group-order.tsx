@@ -17,6 +17,7 @@ import {
   OrderGroup,
   Product,
   registerPushToken,
+  removeInvite as removeInviteApi,
   updateCart,
 } from "@/api/backend";
 
@@ -35,9 +36,18 @@ export type GroupOrderState = {
 
 type ServerResult<T> = { ok: true; value: T } | { ok: false; reason: string };
 
+type PendingState = {
+  startGroup: boolean;
+  loadGroup: boolean;
+  addInvite: boolean;
+  removeInvite: boolean;
+  checkout: boolean;
+};
+
 export type GroupOrderContextValue = {
   state: GroupOrderState;
   products: Product[];
+  pending: PendingState;
   actions: {
     startGroup: (
       hostEmail: string,
@@ -84,6 +94,14 @@ export function GroupOrderProvider({
   });
 
   const [products, setProducts] = useState<Product[]>([]);
+
+  const [pending, setPending] = useState<PendingState>({
+    startGroup: false,
+    loadGroup: false,
+    addInvite: false,
+    removeInvite: false,
+    checkout: false,
+  });
 
   const applyGroup = useCallback((group: OrderGroup) => {
     setState((prev) => {
@@ -137,20 +155,27 @@ export function GroupOrderProvider({
   const startGroup = useCallback(
     async (
       hostEmailRaw: string,
-    ): Promise<{ ok: true } | { ok: false; reason: string }> => {
+    ): Promise<ServerResult<{ groupId: string }>> => {
+      if (pending.startGroup) {
+        return { ok: false, reason: "Creating group already in progress." };
+      }
+
       const hostEmail = normalizeEmail(hostEmailRaw);
+      setPending((p) => ({ ...p, startGroup: true }));
       try {
         const res = await createOrderGroup(hostEmail);
         applyGroup(res.group);
-        return { ok: true };
+        return { ok: true, value: { groupId: res.group.id } };
       } catch (e) {
         return {
           ok: false,
           reason: e instanceof Error ? e.message : "Failed to create group.",
         };
+      } finally {
+        setPending((p) => ({ ...p, startGroup: false }));
       }
     },
-    [applyGroup],
+    [applyGroup, pending.startGroup],
   );
 
   const refreshGroup = useCallback(async () => {
@@ -163,7 +188,11 @@ export function GroupOrderProvider({
     async (
       groupIdRaw: string,
       emailRaw: string,
-    ): Promise<{ ok: true } | { ok: false; reason: string }> => {
+    ): Promise<ServerResult<void>> => {
+      if (pending.loadGroup) {
+        return { ok: false, reason: "Join already in progress." };
+      }
+
       const groupId = String(groupIdRaw || "").trim();
       const email = normalizeEmail(emailRaw);
       if (!groupId) return { ok: false, reason: "Enter a group ID." };
@@ -171,6 +200,7 @@ export function GroupOrderProvider({
       if (!/^\S+@\S+\.\S+$/.test(email))
         return { ok: false, reason: "Enter a valid email address." };
 
+      setPending((p) => ({ ...p, loadGroup: true }));
       try {
         const res = await getOrderGroup(groupId);
         const participants = [res.group.hostEmail, ...res.group.invitedEmails];
@@ -184,15 +214,17 @@ export function GroupOrderProvider({
         applyGroup(res.group);
         await joinGroup(groupId, email);
         setState((prev) => ({ ...prev, activeUserEmail: email }));
-        return { ok: true };
+        return { ok: true, value: undefined };
       } catch (e) {
         return {
           ok: false,
           reason: e instanceof Error ? e.message : "Failed to load group.",
         };
+      } finally {
+        setPending((p) => ({ ...p, loadGroup: false }));
       }
     },
-    [applyGroup],
+    [applyGroup, pending.loadGroup],
   );
 
   const resetGroup = useCallback(() => {
@@ -207,9 +239,11 @@ export function GroupOrderProvider({
   }, []);
 
   const addInvite = useCallback(
-    async (
-      emailRaw: string,
-    ): Promise<{ ok: true } | { ok: false; reason: string }> => {
+    async (emailRaw: string): Promise<ServerResult<void>> => {
+      if (pending.addInvite) {
+        return { ok: false, reason: "Invite already in progress." };
+      }
+
       const email = normalizeEmail(emailRaw);
       if (!state.groupId) return { ok: false, reason: "Start a group first." };
       if (!email) return { ok: false, reason: "Enter an email address." };
@@ -225,28 +259,53 @@ export function GroupOrderProvider({
           reason: "Group is capped at 3 total participants.",
         };
 
+      setPending((p) => ({ ...p, addInvite: true }));
       try {
         const res = await inviteUser(state.groupId, email);
         applyGroup(res.group);
-        return { ok: true };
+        return { ok: true, value: undefined };
       } catch (e) {
         return {
           ok: false,
           reason: e instanceof Error ? e.message : "Invite failed.",
         };
+      } finally {
+        setPending((p) => ({ ...p, addInvite: false }));
       }
     },
-    [applyGroup, state.groupId, state.hostEmail, state.invitedEmails],
+    [
+      applyGroup,
+      pending.addInvite,
+      state.groupId,
+      state.hostEmail,
+      state.invitedEmails,
+    ],
   );
 
   const removeInvite = useCallback(
-    async (emailRaw: string) => {
+    async (emailRaw: string): Promise<ServerResult<void>> => {
+      if (pending.removeInvite) {
+        return { ok: false, reason: "Remove invite already in progress." };
+      }
+
       const email = normalizeEmail(emailRaw);
-      if (!state.groupId) return;
-      const res = await removeInvite(state.groupId, email);
-      applyGroup(res.group);
+      if (!state.groupId) return { ok: false, reason: "No active group." };
+
+      setPending((p) => ({ ...p, removeInvite: true }));
+      try {
+        const res = await removeInviteApi(state.groupId, email);
+        applyGroup(res.group);
+        return { ok: true, value: undefined };
+      } catch (e) {
+        return {
+          ok: false,
+          reason: e instanceof Error ? e.message : "Remove invite failed.",
+        };
+      } finally {
+        setPending((p) => ({ ...p, removeInvite: false }));
+      }
     },
-    [applyGroup, state.groupId],
+    [applyGroup, pending.removeInvite, state.groupId],
   );
 
   const setActiveUserEmail = useCallback((emailRaw: string) => {
@@ -323,11 +382,26 @@ export function GroupOrderProvider({
     [mutateCartQuantity, state.cartsByEmail],
   );
 
-  const checkout = useCallback(async () => {
-    if (!state.groupId) return;
-    const res = await checkoutCart(state.groupId, state.activeUserEmail);
-    applyGroup(res.group);
-  }, [applyGroup, state.activeUserEmail, state.groupId]);
+  const checkout = useCallback(async (): Promise<ServerResult<void>> => {
+    if (pending.checkout) {
+      return { ok: false, reason: "Checkout already in progress." };
+    }
+    if (!state.groupId) return { ok: false, reason: "No active group." };
+
+    setPending((p) => ({ ...p, checkout: true }));
+    try {
+      const res = await checkoutCart(state.groupId, state.activeUserEmail);
+      applyGroup(res.group);
+      return { ok: true, value: undefined };
+    } catch (e) {
+      return {
+        ok: false,
+        reason: e instanceof Error ? e.message : "Checkout failed.",
+      };
+    } finally {
+      setPending((p) => ({ ...p, checkout: false }));
+    }
+  }, [applyGroup, pending.checkout, state.activeUserEmail, state.groupId]);
 
   const participants = useMemo(() => {
     if (!state.hostEmail) return [];
@@ -367,6 +441,7 @@ export function GroupOrderProvider({
     () => ({
       state,
       products,
+      pending,
       actions: {
         startGroup,
         loadGroup,
@@ -399,6 +474,7 @@ export function GroupOrderProvider({
       getTotalCents,
       isHostActive,
       participants,
+      pending,
       products,
       removeFromCart,
       removeInvite,

@@ -16,6 +16,8 @@ type Props = {
   onSharePushToken: () => Promise<void>;
   onShareInviteLink: () => Promise<void>;
   onInvite: () => Promise<void>;
+  inviteDisabled?: boolean;
+  inviteLabel?: string;
   onRemoveInvite: (email: string) => void;
   styles: any;
 };
@@ -31,6 +33,8 @@ export default function HomeGroupSetupCard({
   onSharePushToken,
   onShareInviteLink,
   onInvite,
+  inviteDisabled,
+  inviteLabel,
   onRemoveInvite,
   styles,
 }: Props) {
@@ -97,17 +101,17 @@ export default function HomeGroupSetupCard({
         />
         <Pressable
           testID="invite-button"
-          disabled={invitedEmails.length >= 2}
+          disabled={invitedEmails.length >= 2 || inviteDisabled}
           onPress={onInvite}
           style={({ pressed }) => [
             styles.primaryButton,
             styles.primaryButtonRow,
-            invitedEmails.length >= 2 && styles.disabled,
+            (invitedEmails.length >= 2 || inviteDisabled) && styles.disabled,
             pressed && styles.pressed,
           ]}
         >
           <ThemedText type="smallBold" style={styles.primaryButtonText}>
-            Invite
+            {inviteLabel ?? "Invite"}
           </ThemedText>
         </Pressable>
       </View>

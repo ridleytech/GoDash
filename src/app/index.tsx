@@ -18,7 +18,7 @@ import { useGroupOrder } from "@/state/group-order";
 
 export default function HomeScreen() {
   const theme = useTheme();
-  const { state, products, actions, selectors } = useGroupOrder();
+  const { state, products, actions, selectors, pending } = useGroupOrder();
   const [hostEmailDraft, setHostEmailDraft] = useState("");
   const [inviteDraft, setInviteDraft] = useState("");
 
@@ -65,6 +65,10 @@ export default function HomeScreen() {
                 hostEmailDraft={hostEmailDraft}
                 setHostEmailDraft={setHostEmailDraft}
                 styles={styles}
+                createGroupDisabled={pending.startGroup}
+                createGroupLabel={
+                  pending.startGroup ? "Creating..." : "Create group"
+                }
                 onCreateGroup={async () => {
                   const email = hostEmailDraft.trim().toLowerCase();
                   if (!/^\S+@\S+\.\S+$/.test(email)) {
@@ -113,6 +117,8 @@ export default function HomeScreen() {
                     if (result.ok) setInviteDraft("");
                     else Alert.alert("Invite failed", result.reason);
                   }}
+                  inviteDisabled={pending.addInvite}
+                  inviteLabel={pending.addInvite ? "Inviting..." : "Invite"}
                   onRemoveInvite={(email) => actions.removeInvite(email)}
                 />
               </DebugOutline>

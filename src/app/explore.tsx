@@ -119,9 +119,9 @@ export default function TabTwoScreen() {
                 );
               })}
 
-              <ThemedView style={cardStyle}>
-                {
-                  selectors.isHostActive ? (
+              {
+                selectors.isHostActive ? (
+                  <ThemedView style={cardStyle}>
                     <View style={styles.columnButtons}>
                       <Pressable
                         onPress={async () => {
@@ -254,13 +254,13 @@ export default function TabTwoScreen() {
                         <ThemedText type="smallBold">Checkout</ThemedText>
                       </Pressable>
                     </View>
-                  ) : null
-                  // <ThemedText type="small" themeColor="textSecondary">
-                  //   Only the host can checkout. Switch to the host on the
-                  //   Group Order tab.
-                  // </ThemedText>
-                }
-              </ThemedView>
+                  </ThemedView>
+                ) : null
+                // <ThemedText type="small" themeColor="textSecondary">
+                //   Only the host can checkout. Switch to the host on the
+                //   Group Order tab.
+                // </ThemedText>
+              }
             </>
           )}
 

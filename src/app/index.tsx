@@ -3,6 +3,7 @@ import React from "react";
 import { Alert, ScrollView, Share, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { DebugOutline } from "@/components/debug/debug-outline";
 import HomeCartCard from "@/components/home/home-cart-card";
 import HomeGroupSetupCard from "@/components/home/home-group-setup-card";
 import HomeMenuCard from "@/components/home/home-menu-card";
@@ -53,100 +54,113 @@ export default function HomeScreen() {
           contentContainerStyle={styles.scrollContent}
           stickyHeaderIndices={[0]}
         >
-          <AppHeader />
+          <DebugOutline label="app-header.tsx">
+            <AppHeader />
+          </DebugOutline>
 
           {!state.hostEmail ? (
-            <HomeStartGroupCard
-              cardStyle={cardStyle}
-              theme={theme}
-              hostEmailDraft={hostEmailDraft}
-              setHostEmailDraft={setHostEmailDraft}
-              styles={styles}
-              onCreateGroup={async () => {
-                const email = hostEmailDraft.trim().toLowerCase();
-                if (!/^\S+@\S+\.\S+$/.test(email)) {
-                  Alert.alert(
-                    "Invalid email",
-                    "Enter a valid host email address.",
-                  );
-                  return;
-                }
-                const result = await actions.startGroup(email);
-                if (!result.ok) {
-                  Alert.alert("Create group failed", result.reason);
-                }
-              }}
-            />
-          ) : (
-            <>
-              <HomeGroupSetupCard
+            <DebugOutline label="home-start-group-card.tsx">
+              <HomeStartGroupCard
                 cardStyle={cardStyle}
                 theme={theme}
-                hostEmail={state.hostEmail}
-                invitedEmails={state.invitedEmails}
-                joinedEmails={state.joinedEmails}
-                inviteDraft={inviteDraft}
-                setInviteDraft={setInviteDraft}
+                hostEmailDraft={hostEmailDraft}
+                setHostEmailDraft={setHostEmailDraft}
                 styles={styles}
-                onSharePushToken={async () => {
-                  const result = await registerForPushNotificationsAsync();
-                  if (!result.ok) {
-                    Alert.alert("Push setup", result.reason);
+                onCreateGroup={async () => {
+                  const email = hostEmailDraft.trim().toLowerCase();
+                  if (!/^\S+@\S+\.\S+$/.test(email)) {
+                    Alert.alert(
+                      "Invalid email",
+                      "Enter a valid host email address.",
+                    );
                     return;
                   }
-                  await Share.share({ message: result.token });
+                  const result = await actions.startGroup(email);
+                  if (!result.ok) {
+                    Alert.alert("Create group failed", result.reason);
+                  }
                 }}
-                onShareInviteLink={async () => {
-                  const url = Linking.createURL("/join", {
-                    queryParams: { groupId: state.groupId },
-                  });
-                  await Share.share({ message: url });
-                }}
-                onInvite={async () => {
-                  const result = await actions.addInvite(inviteDraft);
-                  if (result.ok) setInviteDraft("");
-                  else Alert.alert("Invite failed", result.reason);
-                }}
-                onRemoveInvite={(email) => actions.removeInvite(email)}
               />
+            </DebugOutline>
+          ) : (
+            <>
+              <DebugOutline label="home-group-setup-card.tsx">
+                <HomeGroupSetupCard
+                  cardStyle={cardStyle}
+                  theme={theme}
+                  hostEmail={state.hostEmail}
+                  groupId={state.groupId}
+                  invitedEmails={state.invitedEmails}
+                  joinedEmails={state.joinedEmails}
+                  inviteDraft={inviteDraft}
+                  setInviteDraft={setInviteDraft}
+                  styles={styles}
+                  onSharePushToken={async () => {
+                    const result = await registerForPushNotificationsAsync();
+                    if (!result.ok) {
+                      Alert.alert("Push setup", result.reason);
+                      return;
+                    }
+                    await Share.share({ message: result.token });
+                  }}
+                  onShareInviteLink={async () => {
+                    const url = Linking.createURL("/join", {
+                      queryParams: { groupId: state.groupId },
+                    });
+                    await Share.share({ message: url });
+                  }}
+                  onInvite={async () => {
+                    const result = await actions.addInvite(inviteDraft);
+                    if (result.ok) setInviteDraft("");
+                    else Alert.alert("Invite failed", result.reason);
+                  }}
+                  onRemoveInvite={(email) => actions.removeInvite(email)}
+                />
+              </DebugOutline>
 
-              <HomeOrderingAsCard
-                cardStyle={cardStyle}
-                participants={participants}
-                activeUserEmail={state.activeUserEmail}
-                hostEmail={state.hostEmail}
-                joinedEmails={state.joinedEmails}
-                onSetActiveUserEmail={(email) =>
-                  actions.setActiveUserEmail(email)
-                }
-                styles={styles}
-              />
+              <DebugOutline label="home-ordering-as-card.tsx">
+                <HomeOrderingAsCard
+                  cardStyle={cardStyle}
+                  participants={participants}
+                  activeUserEmail={state.activeUserEmail}
+                  hostEmail={state.hostEmail}
+                  joinedEmails={state.joinedEmails}
+                  onSetActiveUserEmail={(email) =>
+                    actions.setActiveUserEmail(email)
+                  }
+                  styles={styles}
+                />
+              </DebugOutline>
 
-              <HomeMenuCard
-                cardStyle={cardStyle}
-                products={products}
-                activeCart={activeCart}
-                onDecrement={(productId) =>
-                  actions.decrementFromCart(productId)
-                }
-                onIncrement={(productId) => actions.addToCart(productId)}
-                styles={styles}
-              />
+              <DebugOutline label="home-menu-card.tsx">
+                <HomeMenuCard
+                  cardStyle={cardStyle}
+                  products={products}
+                  activeCart={activeCart}
+                  onDecrement={(productId) =>
+                    actions.decrementFromCart(productId)
+                  }
+                  onIncrement={(productId) => actions.addToCart(productId)}
+                  styles={styles}
+                />
+              </DebugOutline>
 
-              <HomeCartCard
-                cardStyle={cardStyle}
-                subtotalCents={selectors.getSubtotalCentsForEmail(
-                  state.activeUserEmail,
-                )}
-                activeCart={activeCart}
-                getProductName={getProductName}
-                getProductPrice={getProductPrice}
-                getProductImageUrl={getProductImageUrl}
-                onRemoveFromCart={(productId) =>
-                  actions.removeFromCart(productId)
-                }
-                styles={styles}
-              />
+              <DebugOutline label="home-cart-card.tsx">
+                <HomeCartCard
+                  cardStyle={cardStyle}
+                  subtotalCents={selectors.getSubtotalCentsForEmail(
+                    state.activeUserEmail,
+                  )}
+                  activeCart={activeCart}
+                  getProductName={getProductName}
+                  getProductPrice={getProductPrice}
+                  getProductImageUrl={getProductImageUrl}
+                  onRemoveFromCart={(productId) =>
+                    actions.removeFromCart(productId)
+                  }
+                  styles={styles}
+                />
+              </DebugOutline>
             </>
           )}
         </ScrollView>

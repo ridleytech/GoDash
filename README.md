@@ -62,6 +62,17 @@ npm install
 npm run backend
 ```
 
+## Security / Secrets
+
+- **Do not ship privileged API keys in the app**
+  - Mobile apps can be decompiled and inspected at runtime (including on emulators), so any embedded secret should be treated as compromised.
+- **Client uses only publishable / non-privileged keys**
+  - Example: Stripe `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY` is safe to include in the client.
+- **Backend holds all privileged secrets**
+  - Stripe secret key, AWS SES credentials, and Firebase Admin credentials must live in backend/server env vars and never in the client.
+- **Prefer short-lived tokens over long-lived secrets**
+  - Example: Stripe PaymentSheet uses backend-generated client secrets and ephemeral keys.
+
 3. (Optional) Stripe payments (PaymentSheet)
 
 Stripe PaymentSheet requires a development build (it does not work in Expo Go).

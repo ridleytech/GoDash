@@ -13,9 +13,6 @@ GoDash is a lightweight DoorDash-style group ordering demo built with Expo + Rea
   - Switch who you’re ordering as
 - **Menu + product images**
   - Menu items render with thumbnail images
-- **Host-only checkout**
-  - Summary breakdown by participant
-  - Checkout action restricted to host
 - **Stripe payments (PaymentSheet, test mode)**
   - Host can pay in-app using Stripe PaymentSheet
   - Backend is the source of truth for order totals

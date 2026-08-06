@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { backendStripePaymentSheetParams } from "@/api/backend";
+import { sendStripePaymentSheetParams } from "@/api/backend";
 import AppHeader from "@/components/navigation/app-header";
 import { ThemedText } from "@/components/ui/themed-text";
 import { ThemedView } from "@/components/ui/themed-view";
@@ -139,11 +139,10 @@ export default function TabTwoScreen() {
                           }
 
                           try {
-                            const params =
-                              await backendStripePaymentSheetParams(
-                                state.groupId,
-                                state.hostEmail,
-                              );
+                            const params = await sendStripePaymentSheetParams(
+                              state.groupId,
+                              state.hostEmail,
+                            );
 
                             const init = await initPaymentSheet({
                               paymentIntentClientSecret:
@@ -208,7 +207,7 @@ export default function TabTwoScreen() {
                         </ThemedText>
                       </Pressable>
 
-                      <Pressable
+                      {/* <Pressable
                         onPress={() => {
                           if (selectors.getTotalCents() <= 0) {
                             Alert.alert(
@@ -252,7 +251,7 @@ export default function TabTwoScreen() {
                         ]}
                       >
                         <ThemedText type="smallBold">Checkout</ThemedText>
-                      </Pressable>
+                      </Pressable> */}
                     </View>
                   </ThemedView>
                 ) : null

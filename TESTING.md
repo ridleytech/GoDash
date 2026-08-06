@@ -17,7 +17,7 @@ Unit tests live alongside the code they test, under `src/`.
 Current tests:
 
 - `src/api/backend.test.ts`
-  - Tests `getBackendBaseUrl()` behavior.
+  - Tests `getBaseUrl()` behavior.
   - Verifies it throws if `EXPO_PUBLIC_BACKEND_URL` is missing.
   - Verifies it returns the env var value when set.
 

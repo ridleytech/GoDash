@@ -117,24 +117,24 @@ An object with the following shape (high-level):
 ### Core logic
 
 - **Backend is the source of truth**
-  - Most actions call the backend (`backendCreateGroup`, `backendInvite`, `backendCartDelta`, etc.) and then reconcile local state via `applyBackendGroup()`.
+  - Most actions call the backend (`createOrderGroup`, `inviteUser`, `updateCart`, etc.) and then reconcile local state via `applyGroup()`.
 
-- **`applyBackendGroup()` normalizes server data**
+- **`applyGroup()` normalizes server data**
   - Caps invites to 2 (max 3 total participants).
   - Ensures `joinedEmails` is always an array.
   - Keeps `activeUserEmail` valid; falls back to the host if needed.
 
 - **Polling refresh**
-  - When `state.groupId` is set, the provider polls `backendGetGroup()` every ~3s and applies updates.
+  - When `state.groupId` is set, the provider polls `getOrderGroup()` every ~3s and applies updates.
 
 - **Product list loading**
-  - Attempts to load menu products from the backend via `backendMenu()`.
+  - Attempts to load menu products from the backend via `getMenu()`.
   - If it fails, it keeps a local fallback list.
 
 - **Push token registration side-effect**
   - When `setActiveUserEmail()` is called, it also attempts to:
     - Request notification permission + fetch an FCM token (`registerForPushNotificationsAsync()`)
-    - Register that token to the backend via `backendRegisterPushToken(email, token)`
+    - Register that token to the backend via `registerPushToken(email, token)`
 
 ---
 

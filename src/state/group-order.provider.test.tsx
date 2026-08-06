@@ -1,7 +1,7 @@
 import React from "react";
 import TestRenderer, { act } from "react-test-renderer";
 
-import type { BackendGroup, BackendSummary } from "@/api/backend";
+import type { OrderGroup, OrderSummary } from "@/api/backend";
 
 import {
   GroupOrderProvider,
@@ -17,31 +17,30 @@ jest.mock("@/lib/push-notifications", () => ({
   })),
 }));
 
-const mockBackendCreateGroup = jest.fn();
-const mockBackendGetGroup = jest.fn();
-const mockBackendJoinGroup = jest.fn();
-const mockBackendInvite = jest.fn();
-const mockBackendRemoveInvite = jest.fn();
-const mockBackendCartDelta = jest.fn();
-const mockBackendCheckout = jest.fn();
-const mockBackendMenu = jest.fn();
-const mockBackendRegisterPushToken = jest.fn();
+const mockCreateGroup = jest.fn();
+const mockGetGroup = jest.fn();
+const mockJoinGroup = jest.fn();
+const mockInvite = jest.fn();
+const mockRemoveInvite = jest.fn();
+const mockUpdateCart = jest.fn();
+const mockCheckout = jest.fn();
+const mockMenu = jest.fn();
+const mockRegisterPushToken = jest.fn();
 
 jest.mock("@/api/backend", () => ({
   __esModule: true,
-  backendCreateGroup: (...args: any[]) => mockBackendCreateGroup(...args),
-  backendGetGroup: (...args: any[]) => mockBackendGetGroup(...args),
-  backendJoinGroup: (...args: any[]) => mockBackendJoinGroup(...args),
-  backendInvite: (...args: any[]) => mockBackendInvite(...args),
-  backendRemoveInvite: (...args: any[]) => mockBackendRemoveInvite(...args),
-  backendCartDelta: (...args: any[]) => mockBackendCartDelta(...args),
-  backendCheckout: (...args: any[]) => mockBackendCheckout(...args),
-  backendMenu: (...args: any[]) => mockBackendMenu(...args),
-  backendRegisterPushToken: (...args: any[]) =>
-    mockBackendRegisterPushToken(...args),
+  createOrderGroup: (...args: any[]) => mockCreateGroup(...args),
+  getOrderGroup: (...args: any[]) => mockGetGroup(...args),
+  joinGroup: (...args: any[]) => mockJoinGroup(...args),
+  inviteUser: (...args: any[]) => mockInvite(...args),
+  removeInvite: (...args: any[]) => mockRemoveInvite(...args),
+  updateCart: (...args: any[]) => mockUpdateCart(...args),
+  checkoutCart: (...args: any[]) => mockCheckout(...args),
+  getMenu: (...args: any[]) => mockMenu(...args),
+  registerPushToken: (...args: any[]) => mockRegisterPushToken(...args),
 }));
 
-function makeSummary(group: BackendGroup): BackendSummary {
+function makeSummary(group: OrderGroup): OrderSummary {
   const participants = [group.hostEmail, ...group.invitedEmails];
   return { participants, breakdown: [], totalCents: 0 };
 }
@@ -91,21 +90,21 @@ describe("GroupOrderProvider + useGroupOrder", () => {
   });
 
   beforeEach(() => {
-    mockBackendCreateGroup.mockReset();
-    mockBackendGetGroup.mockReset();
-    mockBackendJoinGroup.mockReset();
-    mockBackendInvite.mockReset();
-    mockBackendRemoveInvite.mockReset();
-    mockBackendCartDelta.mockReset();
-    mockBackendCheckout.mockReset();
-    mockBackendMenu.mockReset();
-    mockBackendRegisterPushToken.mockReset();
+    mockCreateGroup.mockReset();
+    mockGetGroup.mockReset();
+    mockJoinGroup.mockReset();
+    mockInvite.mockReset();
+    mockRemoveInvite.mockReset();
+    mockUpdateCart.mockReset();
+    mockCheckout.mockReset();
+    mockMenu.mockReset();
+    mockRegisterPushToken.mockReset();
 
-    mockBackendMenu.mockResolvedValue({ products: [] });
+    mockMenu.mockResolvedValue({ products: [] });
   });
 
   it("startGroup sets state from backend", async () => {
-    const group: BackendGroup = {
+    const group: OrderGroup = {
       id: "g1",
       hostEmail: "host@email.com",
       invitedEmails: [],
@@ -115,7 +114,7 @@ describe("GroupOrderProvider + useGroupOrder", () => {
       checkedOutAt: null,
     };
 
-    mockBackendCreateGroup.mockResolvedValue({ group });
+    mockCreateGroup.mockResolvedValue({ group });
 
     const { getLatest, unmount } = await renderGroupOrder();
 
@@ -131,8 +130,8 @@ describe("GroupOrderProvider + useGroupOrder", () => {
     await unmount();
   });
 
-  it("applyBackendGroup caps invitedEmails to 2", async () => {
-    const baseGroup: BackendGroup = {
+  it("applyGroup caps invitedEmails to 2", async () => {
+    const baseGroup: OrderGroup = {
       id: "g1",
       hostEmail: "host@email.com",
       invitedEmails: [],
@@ -142,9 +141,9 @@ describe("GroupOrderProvider + useGroupOrder", () => {
       checkedOutAt: null,
     };
 
-    mockBackendCreateGroup.mockResolvedValue({ group: baseGroup });
+    mockCreateGroup.mockResolvedValue({ group: baseGroup });
 
-    const groupWith3Invites: BackendGroup = {
+    const groupWith3Invites: OrderGroup = {
       ...baseGroup,
       invitedEmails: ["a@email.com", "b@email.com", "c@email.com"],
       cartsByEmail: {
@@ -155,7 +154,7 @@ describe("GroupOrderProvider + useGroupOrder", () => {
       },
     };
 
-    mockBackendInvite.mockResolvedValue({
+    mockInvite.mockResolvedValue({
       group: groupWith3Invites,
       summary: makeSummary(groupWith3Invites),
     });
@@ -180,7 +179,7 @@ describe("GroupOrderProvider + useGroupOrder", () => {
   });
 
   it("refreshGroup normalizes activeUserEmail to host if active user is no longer a participant", async () => {
-    const baseGroup: BackendGroup = {
+    const baseGroup: OrderGroup = {
       id: "g1",
       hostEmail: "host@email.com",
       invitedEmails: ["a@email.com"],
@@ -190,16 +189,16 @@ describe("GroupOrderProvider + useGroupOrder", () => {
       checkedOutAt: null,
     };
 
-    mockBackendCreateGroup.mockResolvedValue({ group: baseGroup });
+    mockCreateGroup.mockResolvedValue({ group: baseGroup });
 
-    const groupWithoutInvite: BackendGroup = {
+    const groupWithoutInvite: OrderGroup = {
       ...baseGroup,
       invitedEmails: [],
       joinedEmails: ["host@email.com"],
       cartsByEmail: { "host@email.com": {} },
     };
 
-    mockBackendGetGroup.mockResolvedValue({
+    mockGetGroup.mockResolvedValue({
       group: groupWithoutInvite,
       summary: makeSummary(groupWithoutInvite),
     });

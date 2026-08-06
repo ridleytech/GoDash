@@ -1,6 +1,6 @@
-import { getBackendBaseUrl } from "./backend";
+import { getBaseUrl } from "./backend";
 
-describe("getBackendBaseUrl", () => {
+describe("getBaseUrl", () => {
   const prev = process.env.EXPO_PUBLIC_BACKEND_URL;
 
   beforeEach(() => {
@@ -13,11 +13,11 @@ describe("getBackendBaseUrl", () => {
   });
 
   it("throws if EXPO_PUBLIC_BACKEND_URL is missing", () => {
-    expect(() => getBackendBaseUrl()).toThrow(/EXPO_PUBLIC_BACKEND_URL/);
+    expect(() => getBaseUrl()).toThrow(/EXPO_PUBLIC_BACKEND_URL/);
   });
 
   it("returns EXPO_PUBLIC_BACKEND_URL when set", () => {
     process.env.EXPO_PUBLIC_BACKEND_URL = "http://localhost:3001";
-    expect(getBackendBaseUrl()).toBe("http://localhost:3001");
+    expect(getBaseUrl()).toBe("http://localhost:3001");
   });
 });

@@ -8,17 +8,16 @@ import React, {
 } from "react";
 
 import {
-  backendCartDelta,
-  backendCheckout,
-  backendCreateGroup,
-  backendGetGroup,
-  BackendGroup,
-  backendInvite,
-  backendJoinGroup,
-  backendMenu,
-  BackendProduct,
-  backendRegisterPushToken,
-  backendRemoveInvite,
+  checkoutCart,
+  createOrderGroup,
+  getMenu,
+  getOrderGroup,
+  inviteUser,
+  joinGroup,
+  OrderGroup,
+  Product,
+  registerPushToken,
+  updateCart,
 } from "@/api/backend";
 
 import { registerForPushNotificationsAsync } from "@/lib/push-notifications";
@@ -94,7 +93,7 @@ export function GroupOrderProvider({
 
   const [products, setProducts] = useState<Product[]>([]);
 
-  const applyBackendGroup = useCallback((group: BackendGroup) => {
+  const applyGroup = useCallback((group: OrderGroup) => {
     setState((prev) => {
       const invitedEmails = group.invitedEmails.slice(0, 2);
       const participants = [group.hostEmail, ...invitedEmails];
@@ -118,21 +117,21 @@ export function GroupOrderProvider({
   useEffect(() => {
     if (!state.groupId) return;
     const interval = setInterval(() => {
-      backendGetGroup(state.groupId)
-        .then((res) => applyBackendGroup(res.group))
+      getOrderGroup(state.groupId)
+        .then((res) => applyGroup(res.group))
         .catch(() => {
           // ignore
         });
     }, 3000);
     return () => clearInterval(interval);
-  }, [applyBackendGroup, state.groupId]);
+  }, [applyGroup, state.groupId]);
 
   useEffect(() => {
     let cancelled = false;
-    backendMenu()
+    getMenu()
       .then((res) => {
         if (cancelled) return;
-        const mapped: BackendProduct[] = res.products;
+        const mapped: Product[] = res.products;
         setProducts(mapped);
       })
       .catch(() => {
@@ -149,8 +148,8 @@ export function GroupOrderProvider({
     ): Promise<{ ok: true } | { ok: false; reason: string }> => {
       const hostEmail = normalizeEmail(hostEmailRaw);
       try {
-        const res = await backendCreateGroup(hostEmail);
-        applyBackendGroup(res.group);
+        const res = await createOrderGroup(hostEmail);
+        applyGroup(res.group);
         return { ok: true };
       } catch (e) {
         return {
@@ -159,14 +158,14 @@ export function GroupOrderProvider({
         };
       }
     },
-    [applyBackendGroup],
+    [applyGroup],
   );
 
   const refreshGroup = useCallback(async () => {
     if (!state.groupId) return;
-    const res = await backendGetGroup(state.groupId);
-    applyBackendGroup(res.group);
-  }, [applyBackendGroup, state.groupId]);
+    const res = await getOrderGroup(state.groupId);
+    applyGroup(res.group);
+  }, [applyGroup, state.groupId]);
 
   const loadGroup = useCallback(
     async (
@@ -181,7 +180,7 @@ export function GroupOrderProvider({
         return { ok: false, reason: "Enter a valid email address." };
 
       try {
-        const res = await backendGetGroup(groupId);
+        const res = await getOrderGroup(groupId);
         const participants = [res.group.hostEmail, ...res.group.invitedEmails];
         if (!participants.includes(email)) {
           return {
@@ -190,8 +189,8 @@ export function GroupOrderProvider({
           };
         }
 
-        applyBackendGroup(res.group);
-        await backendJoinGroup(groupId, email);
+        applyGroup(res.group);
+        await joinGroup(groupId, email);
         setState((prev) => ({ ...prev, activeUserEmail: email }));
         return { ok: true };
       } catch (e) {
@@ -201,7 +200,7 @@ export function GroupOrderProvider({
         };
       }
     },
-    [applyBackendGroup],
+    [applyGroup],
   );
 
   const resetGroup = useCallback(() => {
@@ -235,8 +234,8 @@ export function GroupOrderProvider({
         };
 
       try {
-        const res = await backendInvite(state.groupId, email);
-        applyBackendGroup(res.group);
+        const res = await inviteUser(state.groupId, email);
+        applyGroup(res.group);
         return { ok: true };
       } catch (e) {
         return {
@@ -245,17 +244,17 @@ export function GroupOrderProvider({
         };
       }
     },
-    [applyBackendGroup, state.groupId, state.hostEmail, state.invitedEmails],
+    [applyGroup, state.groupId, state.hostEmail, state.invitedEmails],
   );
 
   const removeInvite = useCallback(
     async (emailRaw: string) => {
       const email = normalizeEmail(emailRaw);
       if (!state.groupId) return;
-      const res = await backendRemoveInvite(state.groupId, email);
-      applyBackendGroup(res.group);
+      const res = await removeInvite(state.groupId, email);
+      applyGroup(res.group);
     },
-    [applyBackendGroup, state.groupId],
+    [applyGroup, state.groupId],
   );
 
   const setActiveUserEmail = useCallback((emailRaw: string) => {
@@ -277,7 +276,7 @@ export function GroupOrderProvider({
     registerForPushNotificationsAsync()
       .then((res) => {
         if (!res.ok) return;
-        return backendRegisterPushToken(email, res.token);
+        return registerPushToken(email, res.token);
       })
       .catch(() => {
         // ignore
@@ -287,15 +286,10 @@ export function GroupOrderProvider({
   const mutateCartQuantity = useCallback(
     async (email: string, productId: string, delta: number) => {
       if (!state.groupId) return;
-      const res = await backendCartDelta(
-        state.groupId,
-        email,
-        productId,
-        delta,
-      );
-      applyBackendGroup(res.group);
+      const res = await updateCart(state.groupId, email, productId, delta);
+      applyGroup(res.group);
     },
-    [applyBackendGroup, state.groupId],
+    [applyGroup, state.groupId],
   );
 
   const addToCart = useCallback(
@@ -339,9 +333,9 @@ export function GroupOrderProvider({
 
   const checkout = useCallback(async () => {
     if (!state.groupId) return;
-    const res = await backendCheckout(state.groupId, state.activeUserEmail);
-    applyBackendGroup(res.group);
-  }, [applyBackendGroup, state.activeUserEmail, state.groupId]);
+    const res = await checkoutCart(state.groupId, state.activeUserEmail);
+    applyGroup(res.group);
+  }, [applyGroup, state.activeUserEmail, state.groupId]);
 
   const participants = useMemo(() => {
     if (!state.hostEmail) return [];

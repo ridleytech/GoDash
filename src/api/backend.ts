@@ -1,11 +1,11 @@
-export type BackendProduct = {
+export type Product = {
   id: string;
   name: string;
   priceCents: number;
   imageUrl?: string;
 };
 
-export type BackendGroup = {
+export type OrderGroup = {
   id: string;
   hostEmail: string;
   invitedEmails: string[];
@@ -15,7 +15,7 @@ export type BackendGroup = {
   checkedOutAt: number | null;
 };
 
-export type BackendSummary = {
+export type OrderSummary = {
   participants: string[];
   breakdown: {
     email: string;
@@ -25,7 +25,7 @@ export type BackendSummary = {
   totalCents: number;
 };
 
-export function getBackendBaseUrl() {
+export function getBaseUrl() {
   const value = process.env.EXPO_PUBLIC_BACKEND_URL;
   if (!value) {
     throw new Error(
@@ -36,7 +36,7 @@ export function getBackendBaseUrl() {
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const baseUrl = getBackendBaseUrl();
+  const baseUrl = getBaseUrl();
   const res = await fetch(`${baseUrl}${path}`, {
     ...options,
     headers: {
@@ -54,29 +54,29 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return json as T;
 }
 
-export async function backendHealth() {
+export async function getHealth() {
   return request<{ ok: boolean }>("/health");
 }
 
-export async function backendMenu() {
-  return request<{ products: BackendProduct[] }>("/menu");
+export async function getMenu() {
+  return request<{ products: Product[] }>("/menu");
 }
 
-export async function backendCreateGroup(hostEmail: string) {
-  return request<{ group: BackendGroup }>("/groups", {
+export async function createOrderGroup(hostEmail: string) {
+  return request<{ group: OrderGroup }>("/groups", {
     method: "POST",
     body: JSON.stringify({ hostEmail }),
   });
 }
 
-export async function backendGetGroup(groupId: string) {
-  return request<{ group: BackendGroup; summary: BackendSummary }>(
+export async function getOrderGroup(groupId: string) {
+  return request<{ group: OrderGroup; summary: OrderSummary }>(
     `/groups/${groupId}`,
   );
 }
 
-export async function backendInvite(groupId: string, email: string) {
-  return request<{ group: BackendGroup; summary: BackendSummary }>(
+export async function inviteUser(groupId: string, email: string) {
+  return request<{ group: OrderGroup; summary: OrderSummary }>(
     `/groups/${groupId}/invite`,
     {
       method: "POST",
@@ -85,8 +85,8 @@ export async function backendInvite(groupId: string, email: string) {
   );
 }
 
-export async function backendRemoveInvite(groupId: string, email: string) {
-  return request<{ group: BackendGroup; summary: BackendSummary }>(
+export async function removeInvite(groupId: string, email: string) {
+  return request<{ group: OrderGroup; summary: OrderSummary }>(
     `/groups/${groupId}/invite`,
     {
       method: "DELETE",
@@ -95,8 +95,8 @@ export async function backendRemoveInvite(groupId: string, email: string) {
   );
 }
 
-export async function backendJoinGroup(groupId: string, email: string) {
-  return request<{ group: BackendGroup; summary: BackendSummary }>(
+export async function joinGroup(groupId: string, email: string) {
+  return request<{ group: OrderGroup; summary: OrderSummary }>(
     `/groups/${groupId}/join`,
     {
       method: "POST",
@@ -105,13 +105,13 @@ export async function backendJoinGroup(groupId: string, email: string) {
   );
 }
 
-export async function backendCartDelta(
+export async function updateCart(
   groupId: string,
   email: string,
   productId: string,
   delta: number,
 ) {
-  return request<{ group: BackendGroup; summary: BackendSummary }>(
+  return request<{ group: OrderGroup; summary: OrderSummary }>(
     `/groups/${groupId}/cart`,
     {
       method: "POST",
@@ -120,8 +120,8 @@ export async function backendCartDelta(
   );
 }
 
-export async function backendCheckout(groupId: string, email: string) {
-  return request<{ group: BackendGroup; summary: BackendSummary }>(
+export async function checkoutCart(groupId: string, email: string) {
+  return request<{ group: OrderGroup; summary: OrderSummary }>(
     `/groups/${groupId}/checkout`,
     {
       method: "POST",
@@ -130,7 +130,7 @@ export async function backendCheckout(groupId: string, email: string) {
   );
 }
 
-export async function backendStripePaymentSheetParams(
+export async function sendStripePaymentSheetParams(
   groupId: string,
   email: string,
 ) {
@@ -145,7 +145,7 @@ export async function backendStripePaymentSheetParams(
   });
 }
 
-export async function backendRegisterPushToken(email: string, token: string) {
+export async function registerPushToken(email: string, token: string) {
   return request<{ ok: true }>("/push/register", {
     method: "POST",
     body: JSON.stringify({ email, token }),

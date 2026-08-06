@@ -45,7 +45,7 @@ export default function HomeGroupSetupCard({
         </View>
       </View>
 
-      <View style={styles.rowBetween}>
+      {/* <View style={styles.rowBetween}>
         <ThemedText type="smallBold">Push token</ThemedText>
         <Pressable
           testID="copy-push-token-button"
@@ -57,7 +57,7 @@ export default function HomeGroupSetupCard({
         >
           <ThemedText type="smallBold">Share</ThemedText>
         </Pressable>
-      </View>
+      </View> */}
 
       <View style={styles.rowBetween}>
         <ThemedText type="smallBold">Invite link</ThemedText>

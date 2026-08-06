@@ -25,10 +25,14 @@ export type BackendSummary = {
   totalCents: number;
 };
 
-const DEFAULT_BASE_URL = "http://localhost:3001";
-
 export function getBackendBaseUrl() {
-  return process.env.EXPO_PUBLIC_BACKEND_URL || DEFAULT_BASE_URL;
+  const value = process.env.EXPO_PUBLIC_BACKEND_URL;
+  if (!value) {
+    throw new Error(
+      "Missing EXPO_PUBLIC_BACKEND_URL. Create a .env file and set EXPO_PUBLIC_BACKEND_URL, e.g. http://localhost:3001",
+    );
+  }
+  return value;
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {

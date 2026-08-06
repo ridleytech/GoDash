@@ -23,10 +23,10 @@ export default function JoinScreen() {
   const params = useLocalSearchParams<{ groupId?: string }>();
   const { actions } = useGroupOrder();
 
-  const [groupIdDraft, setGroupIdDraft] = React.useState(
+  const [groupIdDraft, setGroupIdDraft] = useState(
     typeof params.groupId === "string" ? params.groupId : "",
   );
-  const [emailDraft, setEmailDraft] = React.useState("");
+  const [emailDraft, setEmailDraft] = useState("");
 
   const cardStyle = [
     styles.card,

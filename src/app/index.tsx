@@ -1,5 +1,5 @@
 import * as Linking from "expo-linking";
-import React from "react";
+import React, { useState } from "react";
 import { Alert, ScrollView, Share, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -19,11 +19,10 @@ import { useGroupOrder } from "@/state/group-order";
 export default function HomeScreen() {
   const theme = useTheme();
   const { state, products, actions, selectors } = useGroupOrder();
-  const [hostEmailDraft, setHostEmailDraft] = React.useState("");
-  const [inviteDraft, setInviteDraft] = React.useState("");
+  const [hostEmailDraft, setHostEmailDraft] = useState("");
+  const [inviteDraft, setInviteDraft] = useState("");
 
   const participants = selectors.participants;
-
   const activeCart = selectors.cartForActiveUser;
 
   function getProductName(productId: string) {

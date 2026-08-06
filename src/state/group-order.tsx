@@ -22,6 +22,8 @@ import {
 
 import { registerForPushNotificationsAsync } from "@/lib/push-notifications";
 
+export type { Product } from "@/api/backend";
+
 export type GroupOrderState = {
   groupId: string;
   hostEmail: string;
@@ -31,29 +33,26 @@ export type GroupOrderState = {
   cartsByEmail: Record<string, Record<string, number>>;
 };
 
+type ServerResult<T> = { ok: true; value: T } | { ok: false; reason: string };
+
 export type GroupOrderContextValue = {
   state: GroupOrderState;
   products: Product[];
   actions: {
     startGroup: (
       hostEmail: string,
-    ) => Promise<{ ok: true } | { ok: false; reason: string }>;
-    loadGroup: (
-      groupId: string,
-      email: string,
-    ) => Promise<{ ok: true } | { ok: false; reason: string }>;
+    ) => Promise<ServerResult<{ groupId: string }>>;
+    loadGroup: (groupId: string, email: string) => Promise<ServerResult<void>>;
     refreshGroup: () => Promise<void>;
     resetGroup: () => void;
-    addInvite: (
-      email: string,
-    ) => Promise<{ ok: true } | { ok: false; reason: string }>;
-    removeInvite: (email: string) => Promise<void>;
+    addInvite: (email: string) => Promise<ServerResult<void>>;
+    removeInvite: (email: string) => Promise<ServerResult<void>>;
     setActiveUserEmail: (email: string) => void;
     addToCart: (productId: string) => void;
     decrementFromCart: (productId: string) => void;
     removeFromCart: (productId: string) => void;
     clearCartForEmail: (email: string) => void;
-    checkout: () => Promise<void>;
+    checkout: () => Promise<ServerResult<void>>;
   };
   selectors: {
     participants: string[];

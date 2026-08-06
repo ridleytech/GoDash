@@ -4,7 +4,7 @@ const { randomUUID } = require("crypto");
 const { MENU_PRODUCTS } = require("./data/menu");
 const { badRequest, json, notFound, readJson, readRaw } = require("./lib/http");
 const { sendInviteEmail } = require("./lib/ses");
-const { sendExpoPush } = require("./lib/push");
+const { sendFcmPush } = require("./lib/push");
 const { computeSummary } = require("./lib/summary");
 const { isValidEmail, normalizeEmail } = require("./lib/validators");
 const { createGroup, getGroup, saveGroup } = require("./lib/store");
@@ -34,7 +34,7 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(204, {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET,POST,DELETE,OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Headers": "Content-Type,Stripe-Signature",
       });
       return res.end();
     }
@@ -57,6 +57,32 @@ const server = http.createServer(async (req, res) => {
       if (!isValidEmail(email)) return badRequest(res, "Invalid email");
       if (!token) return badRequest(res, "Invalid token");
       pushTokensByEmail.set(email, token);
+      return json(res, 200, { ok: true });
+    }
+
+    if (req.method === "POST" && path === "/debug/push") {
+      const debugKey = String(process.env.DEBUG_PUSH_KEY || "").trim();
+      const providedKey = String(req.headers["x-debug-key"] || "").trim();
+
+      if (debugKey) {
+        if (!providedKey || providedKey !== debugKey)
+          return json(res, 403, { error: "forbidden" });
+      } else if (process.env.NODE_ENV === "production") {
+        return json(res, 404, { error: "not_found" });
+      }
+
+      const body = await readJson(req);
+      const to = String(body.token || body.to || "").trim();
+      const title = String(body.title || "Test push").trim();
+      const messageBody = String(body.body || "Hello from backend").trim();
+      const data =
+        body.data && typeof body.data === "object" && !Array.isArray(body.data)
+          ? body.data
+          : undefined;
+
+      if (!to) return badRequest(res, "Missing token");
+
+      await sendFcmPush({ to, title, body: messageBody, data });
       return json(res, 200, { ok: true });
     }
 
@@ -213,7 +239,7 @@ const server = http.createServer(async (req, res) => {
         const inviteToken = pushTokensByEmail.get(email);
         if (inviteToken) {
           try {
-            await sendExpoPush({
+            await sendFcmPush({
               to: inviteToken,
               title: "GoDash invite",
               body: `You were invited by ${group.hostEmail}`,

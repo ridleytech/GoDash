@@ -1,41 +1,56 @@
-const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
+const fs = require("node:fs");
 
-function isExpoPushToken(token) {
-  return typeof token === "string" && token.startsWith("ExponentPushToken[");
-}
+let firebaseAdmin = null;
+let firebaseMessaging = null;
 
-async function sendExpoPush({ to, title, body, data }) {
-  if (!isExpoPushToken(to)) return;
+function getFirebaseMessaging() {
+  if (firebaseMessaging) return firebaseMessaging;
 
-  const message = {
-    to,
-    sound: "default",
-    title,
-    body,
-    data: data || {},
-  };
+  const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH || "";
+  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON || "";
 
-  const res = await fetch(EXPO_PUSH_URL, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Accept-Encoding": "gzip, deflate",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(message),
-  });
+  if (!serviceAccountPath && !serviceAccountJson) return null;
 
-  const json = await res.json().catch(() => null);
-  if (!res.ok) {
-    const msg =
-      (json && json.errors && json.errors[0] && json.errors[0].message) ||
-      "Failed to send push";
-    throw new Error(msg);
+  // Lazy require so backend can still start without firebase-admin configured.
+  // eslint-disable-next-line global-require
+  firebaseAdmin = require("firebase-admin");
+
+  if (firebaseAdmin.apps.length === 0) {
+    let creds;
+    if (serviceAccountJson) {
+      creds = JSON.parse(serviceAccountJson);
+    } else {
+      creds = JSON.parse(fs.readFileSync(serviceAccountPath, "utf8"));
+    }
+
+    firebaseAdmin.initializeApp({
+      credential: firebaseAdmin.credential.cert(creds),
+    });
   }
 
-  return json;
+  firebaseMessaging = firebaseAdmin.messaging();
+  return firebaseMessaging;
+}
+
+async function sendFcmPush({ to, title, body, data }) {
+  const messaging = getFirebaseMessaging();
+  if (!messaging) return;
+  if (typeof to !== "string" || !to.trim()) return;
+
+  const message = {
+    token: to,
+    notification: {
+      title: title || "",
+      body: body || "",
+    },
+    data: Object.fromEntries(
+      Object.entries(data || {}).map(([k, v]) => [k, String(v)]),
+    ),
+  };
+
+  return messaging.send(message);
 }
 
 module.exports = {
-  sendExpoPush,
+  sendFcmPush,
 };

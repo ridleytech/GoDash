@@ -29,9 +29,9 @@ GoDash is a lightweight DoorDash-style group ordering demo built with Expo + Rea
 - **Invite emails (AWS SES, optional)**
   - Backend can send an invite email on successful invite
   - Disabled by default for the POC
-- **Push notifications (Expo)**
-  - Registers an Expo push token per participant
-  - Sends a push notification when an invited participant has a registered token
+- **Push notifications (Firebase / FCM)**
+  - Registers an FCM token per participant
+  - Backend sends invites via Firebase Admin (FCM)
 - **Basic order constraints**
   - Max quantity per item (backend enforced)
   - Cannot checkout an empty order (backend enforced)
@@ -155,12 +155,38 @@ Example:
 MAX_QTY_PER_ITEM=10 npm run backend
 ```
 
-7. (Optional) Push notifications
+7. (Optional) Push notifications (Firebase / FCM)
 
-Push notifications use Expo push tokens.
+This project uses Firebase Cloud Messaging (FCM) tokens and sends pushes from the backend using Firebase Admin.
 
+Required files (do not commit):
+
+- `google-services.json` (Android)
+- `GoogleService-Info.plist` (iOS)
+
+App identifiers:
+
+- iOS bundle identifier: `com.ridleytech.godash`
+- Android package name: `com.ridleytech.godash`
+
+Backend env vars:
+
+- `FIREBASE_SERVICE_ACCOUNT_PATH` (recommended)
+  - Use `backend/firebase-service-account.json` and keep it gitignored
+- or `FIREBASE_SERVICE_ACCOUNT_JSON`
+
+Notes:
+
+- Expo Go does not support full native push flows; use a development build.
 - iOS Simulator won’t receive push notifications.
-- Use a physical device + a dev build for end-to-end testing.
+
+Dev build:
+
+After adding the Firebase config files, build and install a development client, then start Metro with:
+
+```bash
+npx expo start --dev-client
+```
 
 8. Start the Expo app
 

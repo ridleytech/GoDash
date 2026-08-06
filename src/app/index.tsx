@@ -17,6 +17,7 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { BottomTabInset, MaxContentWidth, Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
+import { registerForPushNotificationsAsync } from "@/lib/push-notifications";
 import { formatMoney, useGroupOrder } from "@/state/group-order";
 
 export default function HomeScreen() {
@@ -115,6 +116,27 @@ export default function HomeScreen() {
                       {state.hostEmail}
                     </ThemedText>
                   </View>
+                </View>
+
+                <View style={styles.rowBetween}>
+                  <ThemedText type="smallBold">Push token</ThemedText>
+                  <Pressable
+                    testID="copy-push-token-button"
+                    onPress={async () => {
+                      const result = await registerForPushNotificationsAsync();
+                      if (!result.ok) {
+                        Alert.alert("Push setup", result.reason);
+                        return;
+                      }
+                      await Share.share({ message: result.token });
+                    }}
+                    style={({ pressed }) => [
+                      styles.secondaryButton,
+                      pressed && styles.pressed,
+                    ]}
+                  >
+                    <ThemedText type="smallBold">Share</ThemedText>
+                  </Pressable>
                 </View>
 
                 <View style={styles.rowBetween}>

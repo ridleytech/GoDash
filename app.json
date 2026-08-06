@@ -4,15 +4,20 @@
     "slug": "godash",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/go-to-logo.jpg",
     "scheme": "godash",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.ridleytech.godash",
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "appleTeamId": "RR25B7NB9X"
     },
     "android": {
+      "package": "com.ridleytech.godash",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#c92138",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"

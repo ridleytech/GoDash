@@ -22,13 +22,6 @@ import {
 
 import { registerForPushNotificationsAsync } from "@/lib/push-notifications";
 
-export type Product = {
-  id: string;
-  name: string;
-  priceCents: number;
-  imageUrl?: string;
-};
-
 export type GroupOrderState = {
   groupId: string;
   hostEmail: string;
